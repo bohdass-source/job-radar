@@ -105,24 +105,23 @@ documentation are in English.
 ## Architecture
 
 ```mermaid
-flowchart LR
-  subgraph Sources
-    BA[BA Jobsuche] & AGG[Adzuna / Arbeitnow / Jooble] & ATS[Greenhouse / Lever / Recruitee /<br/>SmartRecruiters / Ashby / Personio] & MAIL[LinkedIn / Indeed alerts<br/>IMAP, read-only] & BM[Bookmarklet<br/>127.0.0.1 + token]
-  end
-  Terms[docs/sources/*.md<br/>terms cards] -. gate + rate limit .-> Adapters
-  Sources --> Adapters[Adapters + PoliteClient]
-  Adapters --> Clean[Clean, language,<br/>AI/ML + Germany filter]
-  Clean --> Dedup[Cross-source dedup]
-  Dedup --> DB[(MongoDB<br/>postings / jobs)]
-  DB --> Fresh[Freshness:<br/>misses, 404 checks, TTL]
-  Fresh --> DB
-  DB --> Extract[LLM extraction<br/>pydantic + retry / rules]
-  Extract --> DB
-  DB --> Index[Chunkers + embeddings<br/>vectors.npy]
-  Index --> Find[find: portfolio / questionnaire /<br/>keywords / discover]
-  DB --> Find
-  Find --> Match[Buckets: apply / stretch / reject]
-  Match --> Out[CLI · HTML reports · digest · tracker]
+flowchart TB
+  BA[BA Jobsuche] --> A
+  AGG[Adzuna · Arbeitnow · Jooble] --> A
+  ATS[Company career feeds<br/>Greenhouse · Lever · Recruitee<br/>SmartRecruiters · Ashby · Personio] --> A
+  MAIL[LinkedIn / Indeed alerts<br/>own mailbox, read-only] --> A
+  BM[Bookmarklet<br/>127.0.0.1 + token] --> A
+  T[docs/sources/*.md<br/>terms cards] -. gate + rate limit .-> A
+  A[Adapters + polite HTTP client] --> C[Clean · language · AI/ML + Germany filter]
+  C --> D[Cross-source dedup]
+  D --> DB[(MongoDB: postings / jobs)]
+  DB <--> F[Freshness: listing misses · 404 checks · TTL]
+  DB <--> X[Extraction: pydantic schema · LLM with retry · rules fallback]
+  DB --> I[Chunkers + embeddings → vectors.npy]
+  DB --> S[find: portfolio · questionnaire · keywords · discover]
+  I --> S
+  S --> M[Buckets: apply · stretch · reject]
+  M --> O[CLI · HTML reports · weekly digest · tracker]
 ```
 
 ## How "still open" is decided
