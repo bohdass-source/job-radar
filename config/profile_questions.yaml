@@ -1,0 +1,147 @@
+# Guided interview. Seeded into the MongoDB collection `questions` by
+# `job-radar profile seed-questions` (also done automatically on first interview),
+# so questions can be edited in the DB or here and re-seeded.
+#
+# type:   single | multi | bool | number | text | skills | skill_level | market_gaps
+# sets:   which profile field the answer fills
+# ask_if: condition on earlier answers, e.g. "remote_pref != remote_only"
+# skills: questions show the skills of `category` from config/skills.yaml,
+#         ordered by how often the market asks for them (from extracted jobs).
+# skill_level: asked once per skill selected so far ("for_each: selected_skills").
+# market_gaps: offers the most demanded skills you have not mentioned yet.
+
+questions:
+  - qid: target_roles
+    order: 10
+    type: multi
+    text: "Какие роли вам интересны?"
+    options: [ML Engineer, AI Engineer, Data Scientist, MLOps Engineer, LLM/GenAI Engineer, Computer Vision Engineer, NLP Engineer, Research Engineer]
+    sets: target_roles
+
+  - qid: seniority
+    order: 20
+    type: single
+    text: "Как бы вы оценили свой уровень?"
+    options: [intern, junior, mid, senior, lead]
+    sets: seniority
+
+  - qid: years_experience
+    order: 30
+    type: number
+    text: "Сколько лет профессионального опыта в разработке / ML (целое число)?"
+    sets: years_experience
+
+  - qid: skills_language
+    order: 40
+    type: skills
+    category: language
+    text: "Языки программирования, с которыми вы работали:"
+    sets: skills
+
+  - qid: skills_ml_framework
+    order: 50
+    type: skills
+    category: ml_framework
+    text: "ML-фреймворки и библиотеки:"
+    sets: skills
+
+  - qid: skills_genai
+    order: 60
+    type: skills
+    category: genai
+    text: "LLM / GenAI:"
+    sets: skills
+
+  - qid: skills_ml_domain
+    order: 70
+    type: skills
+    category: ml_domain
+    text: "Области ML:"
+    sets: skills
+
+  - qid: skills_mlops
+    order: 80
+    type: skills
+    category: mlops
+    text: "MLOps, инфраструктура, бэкенд:"
+    sets: skills
+
+  - qid: skills_cloud_data
+    order: 90
+    type: skills
+    category: [cloud, data, hardware]
+    text: "Облака и данные:"
+    sets: skills
+
+  - qid: skill_levels
+    order: 100
+    type: skill_level
+    for_each: selected_skills
+    text: "{skill}: 1 — основы/курсы, 2 — использовал(а) в проектах, 3 — в продакшене или 3+ года"
+    sets: skills
+
+  - qid: market_gaps
+    order: 110
+    type: market_gaps
+    top_n: 12
+    text: "Рынок часто просит навыки, которые вы не отметили. Отметьте те, что знаете:"
+    sets: skills
+
+  - qid: learning
+    order: 120
+    type: text
+    text: "Что вы изучаете прямо сейчас (через запятую)? Это пометит вакансии 'доработать', а не 'не подходит'."
+    sets: learning
+
+  - qid: german_level
+    order: 130
+    type: single
+    text: "Уровень немецкого:"
+    options: [none, A1, A2, B1, B2, C1, C2]
+    sets: german_level
+
+  - qid: english_level
+    order: 140
+    type: single
+    text: "Уровень английского:"
+    options: [none, A1, A2, B1, B2, C1, C2]
+    sets: english_level
+
+  - qid: remote_pref
+    order: 150
+    type: single
+    text: "Формат работы:"
+    options: [any, hybrid_or_remote, remote_only]
+    sets: remote_pref
+
+  - qid: cities
+    order: 160
+    type: text
+    text: "В каких городах вы готовы работать в офисе/гибридно (через запятую)?"
+    ask_if: "remote_pref != remote_only"
+    sets: cities
+
+  - qid: relocate
+    order: 170
+    type: bool
+    text: "Готовы переехать в другой город Германии ради подходящей работы?"
+    ask_if: "remote_pref != remote_only"
+    sets: relocate
+
+  - qid: min_salary_year
+    order: 180
+    type: number
+    text: "Минимальная годовая зарплата брутто в EUR (0 — не важно):"
+    sets: min_salary_year
+
+  - qid: exclude_companies
+    order: 190
+    type: text
+    text: "Компании, которые не предлагать (через запятую, можно пусто):"
+    sets: exclude_companies
+
+  - qid: experience_story
+    order: 200
+    type: text
+    text: "Опишите 1-2 проекта: задача, что сделали вы, стек, результат в цифрах. Это пойдёт в черновик резюме."
+    sets: summary

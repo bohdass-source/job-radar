@@ -1,0 +1,77 @@
+# Canonical skill -> category + synonyms (case-insensitive; matched on word
+# boundaries). Extraction output is mapped onto these names so that
+# "PyTorch", "pytorch" and "Torch" all count as one skill in statistics and matching.
+# Add a skill here once and every component (rules extractor, LLM output
+# normalisation, matching, report) picks it up.
+
+skills:
+  python:            {category: language, synonyms: [python3, py]}
+  sql:               {category: language, synonyms: [postgresql, postgres, mysql, t-sql, plsql]}
+  java:              {category: language, synonyms: []}
+  scala:             {category: language, synonyms: []}
+  c++:               {category: language, synonyms: [cpp, c plus plus]}
+  go:                {category: language, synonyms: [golang]}
+  rust:              {category: language, synonyms: []}
+  typescript:        {category: language, synonyms: [ts, javascript, js, node.js, nodejs]}
+  r:                 {category: language, synonyms: [r-studio, rstudio]}
+  bash:              {category: language, synonyms: [shell scripting, shell]}
+
+  pytorch:           {category: ml_framework, synonyms: [torch, pytorch lightning, lightning]}
+  tensorflow:        {category: ml_framework, synonyms: [tf, keras, tf2]}
+  jax:               {category: ml_framework, synonyms: [flax]}
+  scikit-learn:      {category: ml_framework, synonyms: [sklearn, scikit learn]}
+  xgboost:           {category: ml_framework, synonyms: [lightgbm, catboost, gradient boosting]}
+  hugging face:      {category: ml_framework, synonyms: [huggingface, transformers library, hf transformers]}
+  pandas:            {category: data, synonyms: [polars, dataframes]}
+  numpy:             {category: data, synonyms: [scipy]}
+  spark:             {category: data, synonyms: [pyspark, apache spark, databricks]}
+  airflow:           {category: data, synonyms: [apache airflow, dagster, prefect]}
+  dbt:               {category: data, synonyms: []}
+  kafka:             {category: data, synonyms: [apache kafka]}
+
+  llm:               {category: genai, synonyms: [large language models, large language model, llms, gpt, generative ai, genai, gen ai]}
+  rag:               {category: genai, synonyms: [retrieval augmented generation, retrieval-augmented generation]}
+  prompt engineering: {category: genai, synonyms: [prompting]}
+  fine-tuning:       {category: genai, synonyms: [finetuning, fine tuning, lora, peft, qlora, rlhf]}
+  langchain:         {category: genai, synonyms: [llamaindex, llama index, langgraph]}
+  vector databases:  {category: genai, synonyms: [vector database, vector db, pinecone, weaviate, qdrant, milvus, faiss, pgvector, chroma]}
+  ai agents:         {category: genai, synonyms: [agents, agentic, multi-agent, tool calling, function calling]}
+  openai api:        {category: genai, synonyms: [azure openai, openai, anthropic api, claude api]}
+  evaluation:        {category: genai, synonyms: [llm evaluation, evals, model evaluation]}
+
+  nlp:               {category: ml_domain, synonyms: [natural language processing, text mining, computerlinguistik]}
+  computer vision:   {category: ml_domain, synonyms: [cv, image processing, bildverarbeitung, opencv, object detection]}
+  deep learning:     {category: ml_domain, synonyms: [neural networks, neuronale netze, cnn, rnn, transformer models]}
+  machine learning:  {category: ml_domain, synonyms: [maschinelles lernen, ml]}
+  reinforcement learning: {category: ml_domain, synonyms: [rl]}
+  time series:       {category: ml_domain, synonyms: [forecasting, zeitreihen, zeitreihenanalyse]}
+  recommender systems: {category: ml_domain, synonyms: [recommendation systems, recsys]}
+  statistics:        {category: ml_domain, synonyms: [statistik, statistical modeling, bayesian, a/b testing]}
+  speech:            {category: ml_domain, synonyms: [asr, speech recognition, tts]}
+
+  mlops:             {category: mlops, synonyms: [ml ops, ml engineering, model deployment, model serving]}
+  mlflow:            {category: mlops, synonyms: [weights & biases, wandb, w&b, experiment tracking]}
+  kubeflow:          {category: mlops, synonyms: [vertex ai pipelines, sagemaker pipelines]}
+  docker:            {category: mlops, synonyms: [containers, container, podman]}
+  kubernetes:        {category: mlops, synonyms: [k8s, helm, openshift]}
+  ci/cd:             {category: mlops, synonyms: [github actions, gitlab ci, jenkins, continuous integration]}
+  terraform:         {category: mlops, synonyms: [infrastructure as code, iac, pulumi]}
+  fastapi:           {category: mlops, synonyms: [flask, django, rest api, rest apis, grpc]}
+  onnx:              {category: mlops, synonyms: [tensorrt, triton, vllm, model optimization, quantization]}
+  monitoring:        {category: mlops, synonyms: [prometheus, grafana, observability, model monitoring]}
+  git:               {category: mlops, synonyms: [github, gitlab, version control]}
+  linux:             {category: mlops, synonyms: [unix]}
+
+  aws:               {category: cloud, synonyms: [amazon web services, sagemaker, ec2, s3, lambda]}
+  gcp:               {category: cloud, synonyms: [google cloud, google cloud platform, vertex ai, bigquery]}
+  azure:             {category: cloud, synonyms: [microsoft azure, azure ml, azure machine learning]}
+
+  mongodb:           {category: data, synonyms: [mongo, nosql]}
+  elasticsearch:     {category: data, synonyms: [opensearch, elastic]}
+  snowflake:         {category: data, synonyms: []}
+
+  cuda:              {category: hardware, synonyms: [gpu programming, gpu]}
+  edge ai:           {category: hardware, synonyms: [embedded ml, tinyml, edge computing]}
+
+  agile:             {category: soft, synonyms: [scrum, kanban]}
+  communication:     {category: soft, synonyms: [kommunikationsfähigkeit, kommunikationsstärke, stakeholder management]}

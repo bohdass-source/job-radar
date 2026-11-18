@@ -1,0 +1,119 @@
+# Companies whose career pages are read via their ATS's public job-board feed.
+#
+# Add a company from its careers URL without guessing the ATS:
+#   job-radar companies add "https://jobs.ashbyhq.com/<board>" --name "Company"
+# (this only parses the URL; it makes no request).
+#
+# Fields: name, ats (greenhouse|lever|recruitee|smartrecruiters|ashby|personio),
+#         slug (board token / site / company id), eu (lever only), enabled.
+#
+# Verified on 2026-11-16: each feed answered 200 with at least one job.
+# `params` are extra query parameters for the list call (SmartRecruiters: country filter).
+
+companies:
+- name: Celonis
+  ats: greenhouse
+  slug: celonis
+  enabled: true
+- name: N26
+  ats: greenhouse
+  slug: n26
+  enabled: true
+- name: HelloFresh
+  ats: greenhouse
+  slug: hellofresh
+  enabled: true
+- name: Contentful
+  ats: greenhouse
+  slug: contentful
+  enabled: true
+- name: SumUp
+  ats: greenhouse
+  slug: sumup
+  enabled: true
+- name: Helsing
+  ats: greenhouse
+  slug: helsing
+  enabled: true
+- name: Raisin
+  ats: greenhouse
+  slug: raisin
+  enabled: true
+- name: Trade Republic
+  ats: greenhouse
+  slug: traderepublicbank
+  enabled: true
+- name: Wolt
+  ats: greenhouse
+  slug: wolt
+  enabled: true
+- name: FlixBus
+  ats: greenhouse
+  slug: flix
+  enabled: true
+- name: commercetools
+  ats: greenhouse
+  slug: commercetools
+  enabled: true
+- name: Solaris
+  ats: greenhouse
+  slug: solarisbank
+  enabled: true
+- name: Isar Aerospace
+  ats: greenhouse
+  slug: isaraerospace
+  enabled: true
+- name: Grover
+  ats: greenhouse
+  slug: grover
+  enabled: true
+- name: DeepL
+  ats: ashby
+  slug: DeepL
+  enabled: true
+- name: Parloa
+  ats: ashby
+  slug: parloa
+  enabled: true
+- name: n8n
+  ats: ashby
+  slug: n8n
+  enabled: true
+- name: Langdock
+  ats: ashby
+  slug: langdock
+  enabled: true
+- name: Tacto
+  ats: ashby
+  slug: tacto
+  enabled: true
+- name: Aleph Alpha
+  ats: ashby
+  slug: AlephAlpha
+  enabled: true
+- name: Bosch
+  ats: smartrecruiters
+  slug: BoschGroup
+  enabled: true
+  params:
+    country: de
+- name: Delivery Hero
+  ats: smartrecruiters
+  slug: DeliveryHero
+  enabled: true
+  params:
+    country: de
+- name: Continental
+  ats: smartrecruiters
+  slug: ContinentalAG
+  enabled: true
+  params:
+    country: de
+- name: Merantix
+  ats: personio
+  slug: merantix-momentum
+  enabled: true
+- name: Applied AI
+  ats: personio
+  slug: appliedai
+  enabled: true

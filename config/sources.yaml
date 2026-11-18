@@ -1,0 +1,146 @@
+# Which sources run, and with what parameters.
+# A source runs only if `enabled: true` here AND its terms card in
+# docs/sources/<name>.md has `status: approved`.
+
+sources:
+  ba_jobsuche:        # approved by the user 2026-11-16 despite BA Nutzungsbedingungen §2a(3); see card
+    enabled: true
+    max_days_old: 60
+    max_pages: 40
+    queries:
+      - Machine Learning
+      - Künstliche Intelligenz
+      - KI
+      - Artificial Intelligence
+      - AI Engineer
+      - Data Scientist
+      - Data Science
+      - Deep Learning
+      - Computer Vision
+      - NLP
+      - LLM
+      - MLOps
+
+  adzuna:
+    enabled: true
+    results_per_page: 50
+    max_pages: 20
+    max_days_old: 30
+    queries:
+      - machine learning engineer
+      - ml engineer
+      - ai engineer
+      - ki engineer
+      - data scientist
+      - mlops
+      - llm engineer
+      - nlp engineer
+      - computer vision engineer
+      - deep learning
+      - applied scientist
+      - genai
+
+  arbeitnow:
+    enabled: true
+    max_pages: 10
+
+  jooble:
+    enabled: true
+    max_pages: 5
+    queries: [machine learning engineer, ai engineer, data scientist, mlops]
+
+  # ATS feeds read the companies listed in config/companies.yaml
+  greenhouse:      {enabled: true}
+  lever:           {enabled: true}
+  recruitee:       {enabled: true}
+  smartrecruiters: {enabled: true}
+  ashby:           {enabled: true}
+  personio:        {enabled: true}
+
+  linkedin_alerts:
+    enabled: true
+    days_back: 14
+  indeed_alerts:
+    enabled: true
+    days_back: 14
+
+  manual:
+    enabled: true
+
+# Which ads count as AI/ML. Applied to every source (ATS feeds and Arbeitnow
+# return all jobs of a company/board). Matched case-insensitively on word
+# boundaries against the title; `body_keywords` rescue vague titles such as
+# "Software Engineer" when the text is clearly ML work.
+relevance:
+  title_keywords:
+    - machine learning
+    - ml
+    - mlops
+    - ai
+    - ki
+    - künstliche intelligenz
+    - artificial intelligence
+    - data scientist
+    - data science
+    - deep learning
+    - nlp
+    - natural language
+    - computer vision
+    - llm
+    - genai
+    - generative
+    - applied scientist
+    - research scientist
+    - research engineer
+    - ml-engineer
+  title_exclude:
+    - sales
+    - vertrieb
+    - account executive
+    - account manager
+    - recruiter
+    - recruiting
+    - marketing
+    - social media
+    - content
+    - designer
+    - finance
+    - accounting
+    - buchhaltung
+    - controlling
+    - customer success
+    - kundenservice
+    - office
+    - einkauf
+    - jurist
+    - legal counsel
+
+  body_keywords: [pytorch, tensorflow, scikit-learn, hugging face, transformers, llm, rag, mlflow, kubeflow]
+  body_min_hits: 2
+
+# Only jobs in Germany (or remote without a foreign location). Postings whose
+# country field is set and not Germany are dropped; so are locations naming a
+# foreign place below and none of `germany_markers`.
+geo:
+  germany_markers: [deutschland, germany, bundesweit, bayern, bavaria, berlin, hamburg, münchen, munich, köln,
+                    cologne, frankfurt, stuttgart, düsseldorf, leipzig, dresden, hannover, nürnberg, nuremberg,
+                    karlsruhe, mannheim, heidelberg, darmstadt, bonn, essen, dortmund, bremen, aachen, freiburg]
+  foreign_markers: [london, united kingdom, " uk", england, scotland, manchester, cambridge, oxford, york, edinburgh,
+                    paris, france, arrondissement, toulouse, lyon, ecully, amsterdam, netherlands, nederland,
+                    eindhoven, rotterdam, oosterhout, utrecht, zürich, zurich, switzerland, schweiz, suisse, lausanne,
+                    basel, bern, lugano, bellinzona, luzern, genf, geneva, zug, wien, vienna, österreich, austria,
+                    graz, linz, salzburg, dublin, ireland, madrid, barcelona, spain, lisbon, portugal, warsaw, poland,
+                    prague, czech, stockholm, sweden, copenhagen, denmark, oslo, helsinki, milan, italy, brussels,
+                    belgium, luxembourg, new york, san francisco, usa, united states, canada, toronto, india,
+                    bangalore, singapore, dubai, remote from france, remote uk]
+
+freshness:
+  # A verifiable job is closed after it is missing from this many completed
+  # listings of every source that had it.
+  missed_runs_to_close: 2
+  # Jobs only known from mail alerts / manual pages expire after this many days.
+  unverified_ttl_days: 21
+  # Any job older than this (by first sighting) is expired, whatever the source says.
+  max_age_days: 90
+  # `refresh` re-checks open jobs via detail endpoints when last verified longer ago than this.
+  recheck_after_hours: 24

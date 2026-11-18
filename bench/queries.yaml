@@ -1,0 +1,44 @@
+# 40 benchmark queries (German and English, the way a job seeker would type them).
+# Relevance labels are NOT stored here: they reference your private job database
+# and live in data/private/bench/qrels.json (`job-radar bench label-retrieval`).
+queries:
+  - {id: q01, text: "LLM engineer RAG pipelines Berlin"}
+  - {id: q02, text: "Machine Learning Engineer PyTorch München"}
+  - {id: q03, text: "MLOps Kubernetes Kubeflow"}
+  - {id: q04, text: "Data Scientist Zeitreihen Prognose"}
+  - {id: q05, text: "computer vision object detection automotive"}
+  - {id: q06, text: "NLP Ingenieur Transformer Modelle"}
+  - {id: q07, text: "Werkstudent KI Python"}
+  - {id: q08, text: "junior machine learning engineer english speaking team"}
+  - {id: q09, text: "fully remote AI engineer Germany"}
+  - {id: q10, text: "Senior Data Scientist Versicherung"}
+  - {id: q11, text: "recommender systems e-commerce"}
+  - {id: q12, text: "generative AI product team LangChain"}
+  - {id: q13, text: "fine-tuning LLMs LoRA GPU cluster"}
+  - {id: q14, text: "AWS SageMaker model deployment"}
+  - {id: q15, text: "Azure OpenAI Copilot Entwicklung"}
+  - {id: q16, text: "speech recognition ASR"}
+  - {id: q17, text: "reinforcement learning robotics"}
+  - {id: q18, text: "Edge AI embedded deep learning"}
+  - {id: q19, text: "ML platform engineer feature store"}
+  - {id: q20, text: "Data Engineer Spark Airflow für ML"}
+  - {id: q21, text: "KI im Gesundheitswesen medizinische Bilddaten"}
+  - {id: q22, text: "fraud detection machine learning bank"}
+  - {id: q23, text: "Applied Scientist Hamburg"}
+  - {id: q24, text: "research engineer large language models pretraining"}
+  - {id: q25, text: "Teamlead Data Science"}
+  - {id: q26, text: "AI agents tool calling backend Python FastAPI"}
+  - {id: q27, text: "vector database semantic search engineer"}
+  - {id: q28, text: "Bildverarbeitung Qualitätskontrolle Industrie"}
+  - {id: q29, text: "MLflow experiment tracking CI/CD for models"}
+  - {id: q30, text: "visa sponsorship machine learning"}
+  - {id: q31, text: "Praktikum Data Science"}
+  - {id: q32, text: "Statistiker Bayesian A/B testing"}
+  - {id: q33, text: "AI Consultant Beratung Kunden"}
+  - {id: q34, text: "LLM evaluation and safety"}
+  - {id: q35, text: "autonomous driving perception deep learning"}
+  - {id: q36, text: "Teilzeit Machine Learning"}
+  - {id: q37, text: "GCP Vertex AI BigQuery ML"}
+  - {id: q38, text: "document understanding OCR LLM"}
+  - {id: q39, text: "Senior ML Engineer Stuttgart hybrid"}
+  - {id: q40, text: "energy forecasting machine learning Energiewirtschaft"}

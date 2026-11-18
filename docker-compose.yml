@@ -1,0 +1,41 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"   # bound to localhost only
+    volumes:
+      - mongo-data:/data/db
+
+  # Runs the daily collect/refresh cycle and the weekly digest.
+  # Start with: docker compose --profile scheduler up -d
+  scheduler:
+    build: .
+    profiles: ["scheduler"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./docs:/app/docs
+    depends_on: [mongo]
+    command: ["job-radar", "schedule"]
+
+  # Receiver for the bookmarklet. Start with: docker compose --profile inbox up -d
+  inbox:
+    build: .
+    profiles: ["inbox"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      INBOX_BIND: 0.0.0.0
+    ports:
+      - "127.0.0.1:8765:8765"
+    depends_on: [mongo]
+    command: ["job-radar", "inbox"]
+
+volumes:
+  mongo-data:
