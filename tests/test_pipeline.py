@@ -270,3 +270,35 @@ def test_local_config_deep_merge():
 def test_consultant_must_be_a_whole_word():
     assert not is_relevant_title("Steuerberater:in KI affin & remote")
     assert is_relevant_title("KI-Berater (m/w/d)") and is_relevant_title("AI Consultant")
+
+
+def test_arbeitnow_country_footer(terms):
+    from job_radar.sources.aggregators import ArbeitnowAdapter
+
+    def item(slug, country):
+        return {"slug": slug, "title": "ML Engineer", "company_name": "X", "location": "Remote", "remote": True,
+                "url": "u", "created_at": 1794826918, "description": f"Python. Find Jobs in {country} on Arbeitnow"}
+    page = {"data": [item("a", "Germany"), item("b", "United Kingdom")], "links": {"next": None}}
+    http = PoliteClient(min_interval_s=0, transport=httpx.MockTransport(lambda r: httpx.Response(200, json=page)),
+                        sleep=lambda s: None)
+    posts = list(ArbeitnowAdapter({}, http, terms("arbeitnow")).fetch())
+    from job_radar.pipeline.relevance import is_germany
+
+    assert [is_germany(p.location, p.city, p.country) for p in posts] == [True, False]
+
+
+def test_retrieval_qrels_import(tmp_path, monkeypatch):
+    import json
+
+    from job_radar.bench import retrieval
+
+    monkeypatch.setattr(retrieval, "private_path", lambda *p: tmp_path.joinpath(*p))
+    (tmp_path / "bench").mkdir()
+    rows = [{"qid": "q01", "query": "LLM", "job_id": j} for j in ("a", "b", "c")]
+    (tmp_path / "bench" / "pool.jsonl").write_text("\n".join(json.dumps(r) for r in rows))
+    judged = tmp_path / "rel.json"
+    judged.write_text(json.dumps({"q01": ["b"]}))
+    out = json.loads(retrieval.import_judgments(judged, "test").read_text())
+    assert out["q01"]["judged"] == ["a", "b", "c"] and out["q01"]["relevant"] == ["b"]
+    assert retrieval.recall_at(["b", "x"], {"b"}, 5) == 1.0 and retrieval.mrr_at(["x", "b"], {"b"}, 10) == 0.5
+    assert abs(retrieval.ndcg_at(["x", "b"], {"b"}, 10) - 1 / __import__("math").log2(3)) < 1e-9

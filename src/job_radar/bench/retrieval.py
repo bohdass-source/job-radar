@@ -33,16 +33,72 @@ def corpus(db: Database) -> list[dict[str, Any]]:
     return list(db.jobs.find({"description": {"$ne": ""}}, {"job_id": 1, "title": 1, "company": 1, "description": 1}))
 
 
-def build_all(db: Database, models: list[str] | None = None,
-              embedders: dict[str, Embedder] | None = None) -> dict[tuple[str, str], tuple[VectorIndex, float]]:
+def corpus_signature(jobs: list[dict[str, Any]]) -> str:
+    import hashlib
+
+    raw = "|".join(f"{j['job_id']}:{len(j.get('description', ''))}" for j in sorted(jobs, key=lambda j: j["job_id"]))
+    return hashlib.sha1(raw.encode()).hexdigest()
+
+
+def build_all(db: Database, models: list[str] | None = None, embedders: dict[str, Embedder] | None = None,
+              cache: bool = True) -> dict[tuple[str, str], tuple[VectorIndex, float]]:
+    """Build (or load from data/private/bench/index/ when the corpus is unchanged) all six indexes."""
     jobs = corpus(db)
+    sig = corpus_signature(jobs)
     out = {}
     for model in models or list(MODELS):
-        emb = (embedders or {}).get(model) or get_embedder(model)
+        emb = None
         for chunker in CHUNKERS:
+            cache_dir = private_path("bench", "index", f"{chunker}-{model}", "x").parent
+            if cache and (cache_dir / "meta.json").exists():
+                idx = VectorIndex.load(cache_dir)
+                if idx.meta.get("corpus") == sig:
+                    out[(chunker, model)] = (idx, float(idx.meta.get("build_s", 0.0)))
+                    continue
+            emb = emb or (embedders or {}).get(model) or get_embedder(model)
             t0 = time.perf_counter()
             idx = VectorIndex.build(jobs, emb, chunker)
-            out[(chunker, model)] = (idx, time.perf_counter() - t0)
+            build_s = time.perf_counter() - t0
+            idx.meta.update(corpus=sig, build_s=build_s)
+            if cache:
+                idx.save(cache_dir)
+            out[(chunker, model)] = (idx, build_s)
+    return out
+
+
+POOL = "bench/pool.jsonl"
+
+
+def export_pool(db: Database, depth: int = 10) -> Path:
+    """Write the pooled (query, job) pairs to judge, one JSON line each, for offline judging."""
+    models = list(MODELS)
+    embedders = {m: get_embedder(m) for m in models}
+    pooled = pool(db, build_all(db, models, embedders), embedders, depth)
+    jobs = {j["job_id"]: j for j in corpus(db)}
+    path = private_path(POOL)
+    with path.open("w", encoding="utf-8") as fh:
+        for q in load_queries():
+            for jid in pooled[q["id"]]:
+                j = jobs[jid]
+                fh.write(json.dumps({"qid": q["id"], "query": q["text"], "job_id": jid, "title": j.get("title"),
+                                     "company": j.get("company"),
+                                     "snippet": " ".join(j.get("description", "").split())[:300]},
+                                    ensure_ascii=False) + "\n")
+    return path
+
+
+def import_judgments(path: Path, judge_name: str) -> Path:
+    """Read {"qid": [relevant job ids]} for the exported pool and write qrels.json."""
+    relevant = json.loads(Path(path).read_text(encoding="utf-8"))
+    pool_rows = [json.loads(l) for l in private_path(POOL).read_text(encoding="utf-8").splitlines() if l.strip()]
+    qrels: dict[str, Any] = {}
+    for row in pool_rows:
+        entry = qrels.setdefault(row["qid"], {"query": row["query"], "relevant": [], "judged": [], "judge": judge_name})
+        entry["judged"].append(row["job_id"])
+        if row["job_id"] in set(relevant.get(row["qid"], [])):
+            entry["relevant"].append(row["job_id"])
+    out = private_path(QRELS)
+    out.write_text(json.dumps(qrels, indent=1), encoding="utf-8")
     return out
 
 
@@ -135,4 +191,5 @@ def to_markdown(rows: list[dict[str, Any]], judge: str, n_jobs: int) -> str:
         f"{r['ndcg@10']:.3f} | {r['chunks']} | {r['build_s']:.1f} | {r['query_ms']:.1f} |" for r in rows)
     q = rows[0]["queries"] if rows else 0
     return (f"{head}\n{body}\n\n_{q} queries with at least one relevant job, corpus of {n_jobs} jobs, "
-            f"pooled top-10 judgements by {judge}. Models: minilm = {MODELS['minilm']}, e5 = {MODELS['e5']}._")
+            f"pooled top-10 judgements by {judge}, see [bench/LABELLING.md](bench/LABELLING.md). "
+            f"Models: minilm = {MODELS['minilm']}, e5 = {MODELS['e5']}._")

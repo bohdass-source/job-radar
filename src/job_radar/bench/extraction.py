@@ -126,5 +126,6 @@ def to_markdown(results: list[dict[str, Any]]) -> str:
         name = r["method"] if r["method"] == "rules" else f"llm ({r['model']})"
         lines.append(f"| {name} | {r['n']} | " + " | ".join(f"{100 * r[f]:.0f}%" for f in FIELDS)
                      + f" | {p:.2f} / {rc:.2f} / {f:.2f} | {r['skills_all'][2]:.2f} |")
-    return head + "\n" + "\n".join(lines) + "\n\n_Field accuracy = exact match with the hand-checked label " \
-        "(city normalised, salary within 5%). Skills compared after synonym normalisation._"
+    return head + "\n" + "\n".join(lines) + "\n\n_Field accuracy = exact match with the gold label (city normalised, " \
+        "salary within 5%). Skills compared after synonym normalisation. Gold labels: LLM annotator, see " \
+        "[bench/LABELLING.md](bench/LABELLING.md)._"

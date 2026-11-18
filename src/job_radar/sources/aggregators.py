@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import re
 from datetime import datetime, timezone
 from typing import Any, Iterator
 
@@ -93,6 +94,9 @@ class ArbeitnowAdapter(SourceAdapter):
             resp.raise_for_status()
             data = resp.json()
             for item in data.get("data", []):
+                # Arbeitnow lists all of Europe; each ad ends with "... Jobs in <Country> on Arbeitnow".
+                m = re.search(r"Jobs in ([A-Z][A-Za-z ]+?) on Arbeitnow", item.get("description", ""))
+                country = "DE" if not m or m.group(1) == "Germany" else m.group(1)
                 yield Posting(
                     source=self.name,
                     source_id=item["slug"],
@@ -100,6 +104,7 @@ class ArbeitnowAdapter(SourceAdapter):
                     company=item.get("company_name", ""),
                     location=item.get("location", ""),
                     city=item.get("location", ""),
+                    country=country,
                     remote=item.get("remote"),
                     url=item.get("url", ""),
                     description=item.get("description", ""),
@@ -229,6 +234,8 @@ class BAJobsucheAdapter(SourceAdapter):
         return Posting(
             source=self.name, source_id=refnr, title=title, company=x.get("firma", ""),
             city=loc.get("ort", ""), location=", ".join(filter(None, [loc.get("ort"), loc.get("region")])),
+            # The BA also lists Austrian and Swiss jobs; "land" says which country.
+            country="DE" if (loc.get("land") or "DEUTSCHLAND").upper() == "DEUTSCHLAND" else loc["land"],
             remote=None if homeoffice is None else (True if x.get("homeofficetyp") == "AUSSCHLIESSLICH" else None),
             url=x.get("externeURL") or f"https://www.arbeitsagentur.de/jobsuche/jobdetail/{refnr}",
             description=description, description_is_snippet=snippet,

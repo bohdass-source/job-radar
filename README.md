@@ -164,17 +164,17 @@ jobs.
 <!-- SNAPSHOT:START -->
 Collected on 2026-11-18. These are aggregates only; closed and expired jobs are excluded.
 
-- **1054 open AI/ML jobs in Germany** (1057 unique jobs seen, from 1101 source records after cross-source merging).
-- **German:** 34% of ads ask for C1 or higher, 45% for B2, and 1% say German is optional.
-- **Most required skills:** python 49%, llm 45%, machine learning 24%, sql 23%, monitoring 23%, ci/cd 22%, rag 22%, communication 21%, ai agents 21%, azure 20%.
+- **1012 open AI/ML jobs in Germany** (1015 unique jobs seen, from 1058 source records after cross-source merging).
+- **German:** 35% of ads ask for C1 or higher, 46% for B2, and 1% say German is optional.
+- **Most required skills:** python 48%, llm 46%, machine learning 23%, sql 23%, rag 23%, ci/cd 22%, monitoring 22%, communication 21%, ai agents 20%, azure 20%.
 - **Workplace:** 54% hybrid, 2% fully remote, 6% on-site, and the rest not stated.
 - **Cities with the most jobs:** München 111, Berlin 93, Frankfurt am Main 47, Hamburg 46, Stuttgart 42, Köln 41.
 
 | Source | Jobs | Only from this source | Open |
 |---|---:|---:|---:|
-| ba_jobsuche | 869 | 867 | 867 |
-| arbeitnow | 120 | 114 | 120 |
-| greenhouse | 45 | 40 | 45 |
+| ba_jobsuche | 861 | 859 | 859 |
+| arbeitnow | 97 | 91 | 97 |
+| greenhouse | 34 | 29 | 34 |
 | smartrecruiters | 21 | 20 | 20 |
 | ashby | 6 | 6 | 6 |
 | personio | 3 | 3 | 3 |
@@ -246,16 +246,43 @@ ad headings) are compared across two models (`paraphrase-multilingual-MiniLM-L12
 only the union of the top 10 from all six configurations is judged.
 
 <!-- BENCH:RETRIEVAL:START -->
-_Results are added after the relevance labels are completed (`job-radar bench label-retrieval`)._
+| Chunker | Model | Recall@5 | Recall@10 | MRR@10 | nDCG@10 | Chunks | Index build, s | Query, ms |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| section | e5 | 0.381 | 0.526 | 0.683 | 0.505 | 4300 | 82.7 | 5.5 |
+| fixed | e5 | 0.333 | 0.495 | 0.554 | 0.459 | 6373 | 101.1 | 6.8 |
+| sentence | e5 | 0.303 | 0.423 | 0.551 | 0.410 | 6549 | 75.4 | 5.7 |
+| fixed | minilm | 0.270 | 0.410 | 0.426 | 0.356 | 6373 | 41.8 | 6.8 |
+| sentence | minilm | 0.229 | 0.359 | 0.449 | 0.337 | 6549 | 43.4 | 5.4 |
+| section | minilm | 0.224 | 0.349 | 0.437 | 0.337 | 4300 | 29.6 | 5.4 |
+
+_39 queries with at least one relevant job, corpus of 1014 jobs, pooled top-10 judgements by an LLM annotator (Claude), see [bench/LABELLING.md](bench/LABELLING.md). Models: minilm = sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2, e5 = intfloat/multilingual-e5-small._
 <!-- BENCH:RETRIEVAL:END -->
+
+**What the retrieval numbers say.** `multilingual-e5-small` beats the MiniLM model with every
+chunker, so it is the default. The section-aware chunker gives e5 its best result: +0.05 nDCG@10 over a
+fixed window, and the highest MRR, so the first relevant job usually appears first. With MiniLM, sections
+do not help, probably because that model reads at most 128 tokens and cuts off the end of the longer
+section chunks. A relevant job sits in the top 10 for about half of the relevant set (Recall@10 ≈ 0.53): the
+queries are narrow (city + role + technology) and the corpus is small, so hybrid search with a keyword
+filter (`find keywords`) is the recommended way to search.
 
 **Extraction.** Each field is scored against 50 hand-checked ads, sampled per source and pre-filled by
 the extractor. City names are normalised, salaries count as correct within 5%, and skills are scored with
 precision, recall and F1 after synonym normalisation.
 
 <!-- BENCH:EXTRACTION:START -->
-_Results are added after the 50 gold labels are verified (`job-radar bench label-extraction`)._
+| Method | Jobs | Seniority | German | English | Remote | City | Salary | Years | Skills req. P / R / F1 | All skills F1 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|
+| rules | 50 | 86% | 52% | 62% | 78% | 88% | 96% | 84% | 0.66 / 0.80 / 0.72 | 0.79 |
+
+_Field accuracy = exact match with the gold label (city normalised, salary within 5%). Skills compared after synonym normalisation. Gold labels: LLM annotator, see [bench/LABELLING.md](bench/LABELLING.md)._
 <!-- BENCH:EXTRACTION:END -->
+
+**What the extraction numbers say.** Rules handle what has a fixed shape: salary (96%), city (88%),
+seniority (86%) and years (84%). They are weak on language levels (German 52%, English 62%) because they
+read "German" plus an adjective and default to B2 when a level is not spelled out. That is exactly where
+the LLM extractor (`extract --method llm`) is meant to help; its row appears here once a gateway is
+configured.
 
 ## Tests
 

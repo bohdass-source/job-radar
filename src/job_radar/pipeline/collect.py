@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import timedelta
 from typing import Any, Iterable
 
@@ -97,7 +98,8 @@ def prune(db: Database, *, dry_run: bool = False) -> dict[str, int]:
         reason = None
         if not is_relevant(job.get("title", ""), job.get("description", "")):
             reason = "not_relevant"
-        elif not is_germany(job.get("location", ""), job.get("city", ""), job.get("country") or "DE"):
+        elif not is_germany(job.get("location", ""), job.get("city", ""), job.get("country") or "DE") or \
+                re.search(r"Jobs in (?!Germany)[A-Z][A-Za-z ]+? on Arbeitnow", job.get("description", "")):
             reason = "not_germany"
         if reason is None:
             counts["kept"] += 1

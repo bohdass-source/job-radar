@@ -422,12 +422,22 @@ def cmd_bench(args: argparse.Namespace) -> None:
                       f"{job.get('description', '')[:400]}")
                 return input("relevant? [y/N] ").strip().lower() in ("y", "yes", "д", "да")
         print(f"qrels saved to {retrieval.label(db, judge, args.judge)}")
+    elif args.action == "export-pool":
+        from .bench import retrieval
+
+        print(f"pool written to {retrieval.export_pool(db)}")
+    elif args.action == "import-qrels":
+        from .bench import retrieval
+        from pathlib import Path
+
+        print(f"qrels written to {retrieval.import_judgments(Path(args.file), args.judge)}")
     elif args.action == "retrieval":
         from .bench import retrieval
 
         rows = retrieval.run(db)
         qrels = json.loads(private_path(retrieval.QRELS).read_text())
-        judge = "an LLM (verify!)" if any(v.get("judge") == "llm" for v in qrels.values()) else "a human"
+        judges = sorted({v.get("judge", "unknown") for v in qrels.values()})
+        judge = ", ".join("an LLM (verify!)" if j == "llm" else j for j in judges)
         md = retrieval.to_markdown(rows, judge, len(retrieval.corpus(db)))
         print(md)
         if args.write_readme:
@@ -591,8 +601,10 @@ def main(argv: list[str] | None = None) -> None:
     s.set_defaults(fn=cmd_stats)
 
     s = sub.add_parser("bench", help="benchmarks")
-    s.add_argument("action", choices=["label-retrieval", "retrieval", "label-extraction", "extraction"])
-    s.add_argument("--judge", choices=["human", "llm"], default="human")
+    s.add_argument("action", choices=["label-retrieval", "export-pool", "import-qrels", "retrieval",
+                                      "label-extraction", "extraction"])
+    s.add_argument("file", nargs="?", help="import-qrels: JSON {qid: [relevant job ids]}")
+    s.add_argument("--judge", default="human", help="who judged: human | llm | a model name")
     s.add_argument("--n", type=int, default=50)
     s.add_argument("--write-readme", action="store_true")
     s.set_defaults(fn=cmd_bench)

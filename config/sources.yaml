@@ -149,7 +149,11 @@ geo:
                     graz, linz, salzburg, dublin, ireland, madrid, barcelona, spain, lisbon, portugal, warsaw, poland,
                     prague, czech, stockholm, sweden, copenhagen, denmark, oslo, helsinki, milan, italy, brussels,
                     belgium, luxembourg, new york, san francisco, usa, united states, canada, toronto, india,
-                    bangalore, singapore, dubai, remote from france, remote uk]
+                    bangalore, singapore, dubai, remote from france, remote uk,
+                    chicago, illinois, raleigh, north carolina, redwood city, california, washington, boston, austin,
+                    seattle, ", us,", ", us", israel, ramat gan, tel aviv, sydney, australia, finland, bordeaux, lille,
+                    villejuif, saint-sulpice, bristol, ermatingen, rümlang, schlieren, winterthur, basel-stadt,
+                    oesterreich, tirol, kaernten, kärnten, steiermark, vorarlberg, burgenland]
 
 freshness:
   # A verifiable job is closed after it is missing from this many completed
