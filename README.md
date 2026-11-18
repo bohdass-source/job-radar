@@ -1,5 +1,7 @@
 # job-radar
 
+[![tests](https://github.com/bohdass-source/job-radar/actions/workflows/tests.yml/badge.svg)](https://github.com/bohdass-source/job-radar/actions/workflows/tests.yml)
+
 Collects AI and machine-learning job ads in Germany from several sources, merges duplicates, keeps only
 vacancies that are still open, extracts structured requirements, and tells a job seeker which jobs they
 can apply to now, which need work first, and which do not fit.
@@ -62,8 +64,8 @@ removes a job: an ad that does not mention German passes a German filter.
 <td><img src="docs/screenshots/cli-sources.png" alt="Sources and terms status"></td></tr>
 </table>
 
-The reports and dialogs are in Russian, the language of the first user. Code, configuration and
-documentation are in English.
+Reports, dialogs and the digest are available in English and Russian. Use `--lang en|ru` or set
+`JOB_RADAR_LANG`; the default is English. The questionnaire accepts answers in English, German or Russian.
 
 ## Key features
 
@@ -261,10 +263,10 @@ _Results are added after the 50 gold labels are verified (`job-radar bench label
 .venv/bin/python -m pytest -q
 ```
 
-The suite covers adapters against recorded response shapes, the terms gate, the polite client's backoff,
+CI runs the suite on every push (GitHub Actions, Python 3.12). The suite covers adapters against recorded response shapes, the terms gate, the polite client's backoff,
 cross-source merging and idempotent re-runs, the freshness rules (including "a failed listing is not a
 miss"), extraction with LLM retries, chunkers and the vector index, the three buckets, the tracker, all
-four search modes and filters, the alert-email parser, JSON-LD parsing for manual pages, and HTML
+four search modes and filters, both output languages, the alert-email parser, JSON-LD parsing for manual pages, and HTML
 escaping in reports. Tests use mongomock and `httpx.MockTransport`; no network is needed.
 
 ## Project structure

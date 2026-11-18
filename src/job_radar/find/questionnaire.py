@@ -23,14 +23,9 @@ from ..match.interview import seed_questions
 from ..match.profile import Profile, RemotePref
 from ..skills import all_skills, find_in_text, normalise
 from .filters import SearchFilters
+from ..i18n import question_text, t
 
-EXTRA_QUESTIONS = [
-    ("radius_km", "Насколько далеко от этих городов вы готовы ездить (км)?"),
-    ("workplace", "Формат: только удалённо / гибрид / офис — что подходит?"),
-    ("salary", "Желаемый диапазон зарплаты в год, брутто (например 60 000–80 000)?"),
-    ("restrictions", "Ограничения: без кадровых агентств? только полная/частичная занятость? только бессрочный договор? "
-                     "нужна ли виза? не работаете в выходные? что-то ещё?"),
-]
+EXTRA_QUESTIONS = ["radius_km", "workplace", "salary", "restrictions"]   # wording: i18n keys q.<id>
 
 
 class QuestionnaireResult(BaseModel):
@@ -64,18 +59,16 @@ Return only JSON valid for this schema: {schema}"""
 def template(db: Database, path: Path) -> Path:
     if not db.questions.count_documents({}):
         seed_questions(db)
-    lines = ["# Анкета job-radar", "",
-             "Отвечайте своими словами под каждым вопросом. Можно по-русски, по-немецки или по-английски.",
-             "Файл хранится только у вас (data/private/).", ""]
+    lines = [t("q.title"), "", t("q.intro"), t("q.private"), ""]
     for q in db.questions.find({}).sort("order", 1):
         if q["type"] in ("skill_level", "market_gaps"):
             continue
-        text = q["text"]
+        text = question_text(q)
         if q["type"] == "skills":
-            text = text.rstrip(":") + " — перечислите и укажите уровень (основы / проекты / продакшен):"
+            text = text.rstrip(":") + t("q.skills_suffix")
         lines += [f"## {q['qid']}: {text}", "", ""]
-    for qid, text in EXTRA_QUESTIONS:
-        lines += [f"## {qid}: {text}", "", ""]
+    for qid in EXTRA_QUESTIONS:
+        lines += [f"## {qid}: {t('q.' + qid)}", "", ""]
     path.write_text("\n".join(lines), encoding="utf-8")
     return path
 

@@ -13,6 +13,7 @@ from typing import Any
 
 from ..models import utcnow
 from .aggregates import _pct
+from ..i18n import get_lang, t
 
 ATTRIBUTION = {
     "adzuna": '<a href="https://www.adzuna.co.uk">The Adzuna API</a>',
@@ -46,7 +47,7 @@ a{color:var(--bar)}footer{margin-top:40px;font-size:13px;color:var(--muted)}
 
 def _bars(rows: list[tuple[str, int, float]], label: str = "%") -> str:
     if not rows:
-        return '<p class="muted">нет данных</p>'
+        return f'<p class="muted">{t("h.no_data")}</p>'
     peak = max(r[2] for r in rows) or 1
     out = []
     for name, count, pct in rows:
@@ -71,7 +72,7 @@ def _fmt_dt(v: Any) -> str:
 
 
 def _page(title: str, body: str) -> str:
-    return (f'<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" '
+    return (f'<!doctype html><html lang="{get_lang()}"><head><meta charset="utf-8"><meta name="viewport" '
             f'content="width=device-width,initial-scale=1"><title>{escape(title)}</title><style>{CSS}</style></head>'
             f"<body><main>{body}</main></body></html>")
 
@@ -81,61 +82,60 @@ def market_section(stats: dict[str, Any], sources: list[dict[str, Any]]) -> str:
     sal_text = (f"{sal['median_min']:,} – {sal['median_max']:,} €".replace(",", " ")
                 if sal["median_min"] and sal["median_max"] else "—")
     kpis = "".join(f'<div class="card kpi"><span class="muted">{escape(k)}</span><b>{escape(str(v))}</b></div>' for k, v in [
-        ("Актуальных вакансий", stats["live_jobs"]),
-        ("Всего уникальных за всё время", stats["total_jobs_ever"]),
-        ("Записей из источников", stats["postings"]),
-        ("Медиана зарплаты (указана)", sal_text),
+        (t("h.kpi_live"), stats["live_jobs"]),
+        (t("h.kpi_total"), stats["total_jobs_ever"]),
+        (t("h.kpi_records"), stats["postings"]),
+        (t("h.kpi_salary"), sal_text),
     ])
     src_rows = "".join(
         f"<tr><td>{escape(s['source'])}</td><td class=num>{s['jobs']}</td><td class=num>{s['unique']}</td>"
         f"<td class=num>{s['live']}</td><td>{_fmt_dt(s['last_run'])}</td></tr>" for s in sources)
     status = ", ".join(f"{k}: {v}" for k, v in sorted(stats["status"].items()))
     return f"""
-<h2 id="market">Рынок</h2>
+<h2 id="market">{t("h.market")}</h2>
 <div class="kpis">{kpis}</div>
-<p class="muted">Статусы всех вакансий: {escape(status)}. Доля объявлений, где доступен только фрагмент текста:
-{stats['snippet_share']}% — для них навыки извлекаются неполно. Зарплата указана в {sal['n']} объявлениях.</p>
+<p class="muted">{escape(t("h.market_note", status=status, snip=stats['snippet_share'], n=sal['n']))}</p>
 <div class="grid">
-{_card("Обязательные навыки (доля вакансий)", _bars(stats["skills_required"]))}
-{_card("Желательные навыки", _bars(stats["skills_nice"]))}
-{_card("Категории навыков", _bars(stats["skill_categories"]))}
-{_card("Немецкий", _bars(stats["german"]))}
-{_card("Английский", _bars(stats["english"]))}
-{_card("Формат работы", _bars(stats["remote"]))}
-{_card("Уровень", _bars(stats["seniority"]))}
-{_card("Города", _bars(stats["cities"]))}
-{_card("Язык объявления", _bars(stats["ad_language"]))}
+{_card(t("h.req_skills"), _bars(stats["skills_required"]))}
+{_card(t("h.nice_skills"), _bars(stats["skills_nice"]))}
+{_card(t("h.categories"), _bars(stats["skill_categories"]))}
+{_card(t("h.german"), _bars(stats["german"]))}
+{_card(t("h.english"), _bars(stats["english"]))}
+{_card(t("h.workplace"), _bars(stats["remote"]))}
+{_card(t("h.seniority"), _bars(stats["seniority"]))}
+{_card(t("h.cities"), _bars(stats["cities"]))}
+{_card(t("h.ad_lang"), _bars(stats["ad_language"]))}
 </div>
-<h2 id="sources">Источники</h2>
-<p class="muted">«Уникальных» — вакансии, которые дал только этот источник (после склейки дублей между источниками).</p>
-<div class="card tablewrap"><table><tr><th>Источник</th><th class=num>Вакансий</th><th class=num>Уникальных</th>
-<th class=num>Актуальных</th><th>Последний сбор (UTC)</th></tr>{src_rows}</table></div>"""
+<h2 id="sources">{t("h.sources")}</h2>
+<p class="muted">{escape(t("h.sources_note"))}</p>
+<div class="card tablewrap"><table><tr><th>{t("h.col_source")}</th><th class=num>{t("h.col_jobs")}</th>
+<th class=num>{t("h.col_unique")}</th><th class=num>{t("h.col_open")}</th><th>{t("h.col_last_run")}</th></tr>{src_rows}</table></div>"""
 
 
 def _attribution(sources: list[dict[str, Any]]) -> str:
     names = [ATTRIBUTION[s["source"]] for s in sources if s["source"] in ATTRIBUTION]
-    return ("Источники данных: " + ", ".join(names) + ". ") if names else ""
+    return (t("h.data_sources") + ", ".join(names) + ". ") if names else ""
 
 
 def render_public(stats: dict[str, Any], sources: list[dict[str, Any]]) -> str:
-    body = (f"<h1>job-radar — рынок AI/ML-вакансий в Германии</h1>"
-            f'<p class="muted">Сформировано {utcnow():%Y-%m-%d %H:%M} UTC. Только агрегаты; закрытые и устаревшие '
-            f"вакансии исключены.</p><nav><a href='#market'>Рынок</a><a href='#sources'>Источники</a></nav>"
+    body = (f"<h1>{t('h.public_title')}</h1>"
+            f'<p class="muted">{t("h.public_sub", ts=f"{utcnow():%Y-%m-%d %H:%M}")}</p>'
+            f"<nav><a href='#market'>{t('h.market')}</a><a href='#sources'>{t('h.sources')}</a></nav>"
             + market_section(stats, sources)
-            + f"<footer>{_attribution(sources)}Письма-уведомления и вручную отправленные страницы в агрегаты не входят.</footer>")
+            + f"<footer>{_attribution(sources)}{t('h.public_footer')}</footer>")
     return _page("job-radar market", body)
 
 
 def _job_rows(items: list[tuple[dict[str, Any], Any]], tracked: dict[str, str], show_reasons: bool) -> str:
     if not items:
-        return '<p class="muted">Сейчас таких вакансий нет.</p>'
+        return f'<p class="muted">{t("h.none_now")}</p>'
     rows = []
     for job, res in items:
         missing = "".join(f'<span class="tag miss">{escape(s)}</span>' for s in res.missing_required)
         matched = "".join(f'<span class="tag">{escape(s)}</span>' for s in res.matched[:8])
         reasons = "<br>".join(escape(x) for x in (res.blockers if show_reasons and res.bucket == "reject" else res.gaps))
         notes = "<br>".join(escape(x) for x in res.notes)
-        verified = _fmt_dt(job.get("last_verified")) if job.get("status") == "open" else "не проверено"
+        verified = _fmt_dt(job.get("last_verified")) if job.get("status") == "open" else t("s.unverified")
         rows.append(
             f"<tr><td><a href='{safe_url(job.get('url'))}' rel='noreferrer'>{escape(job.get('title', ''))}</a><br>"
             f"<span class=muted>{escape(job.get('company', ''))} · {escape(job.get('city') or job.get('location') or '')}"
@@ -143,8 +143,8 @@ def _job_rows(items: list[tuple[dict[str, Any], Any]], tracked: dict[str, str], 
             f"<td class=num>{res.score:.2f}</td><td>{matched}{missing}</td><td>{reasons}"
             f"{'<br>' if reasons and notes else ''}<span class=muted>{notes}</span></td>"
             f"<td>{escape(tracked.get(job['job_id'], '—'))}</td><td class=muted>{verified}</td></tr>")
-    head = ("<tr><th>Вакансия</th><th class=num>Score</th><th>Навыки (оранжевым — не хватает)</th>"
-            "<th>Причины / заметки</th><th>Статус</th><th>Проверено</th></tr>")
+    head = (f"<tr><th>{t('col.job')}</th><th class=num>{t('h.score')}</th><th>{t('col.skills_missing')}</th>"
+            f"<th>{t('col.reasons')}</th><th>{t('col.status')}</th><th>{t('col.verified')}</th></tr>")
     return f'<div class="card tablewrap"><table>{head}{"".join(rows)}</table></div>'
 
 
@@ -159,24 +159,23 @@ def render_private(stats: dict[str, Any], sources: list[dict[str, Any]], matches
         f"<span class=muted>{escape(a.get('company') or '')}</span></td><td>{escape(a['status'])}</td>"
         f"<td>{escape(a.get('job_status', ''))}</td><td>{_fmt_dt(a.get('updated_at'))}</td>"
         f"<td>{escape((a.get('history') or [{}])[-1].get('note', ''))}</td></tr>" for a in applications)
-    body = f"""<h1>job-radar — мои вакансии</h1>
-<p class="muted">Сформировано {utcnow():%Y-%m-%d %H:%M} UTC. Закрытые и устаревшие вакансии сюда не попадают.
-Перед подачей откройте ссылку: статус «не проверено» значит, что вакансия пришла из письма или вручную.</p>
-<nav><a href="#apply">Подходят ({len(buckets['apply'])})</a><a href="#stretch">Доработать ({len(buckets['stretch'])})</a>
-<a href="#reject">Не подходят ({len(buckets['reject'])})</a><a href="#tracker">Мои заявки ({len(applications)})</a>
-<a href="#market">Рынок</a><a href="#sources">Источники</a></nav>
-<h2 id="apply" class="apply">Подходят — можно подаваться</h2>
+    body = f"""<h1>{t("h.private_title")}</h1>
+<p class="muted">{escape(t("h.private_sub", ts=f"{utcnow():%Y-%m-%d %H:%M}"))}</p>
+<nav><a href="#apply">{t("h.nav_apply", n=len(buckets['apply']))}</a><a href="#stretch">{t("h.nav_stretch", n=len(buckets['stretch']))}</a>
+<a href="#reject">{t("h.nav_reject", n=len(buckets['reject']))}</a><a href="#tracker">{t("h.nav_tracker", n=len(applications))}</a>
+<a href="#market">{t("h.market")}</a><a href="#sources">{t("h.sources")}</a></nav>
+<h2 id="apply" class="apply">{t("h.apply_title")}</h2>
 {_job_rows(buckets['apply'][:limit_per_bucket], tracked, False)}
-<h2 id="stretch" class="stretch">Доработать — подаваться с честной пометкой или подтянуть навык</h2>
-<div class="grid">{_card("Чего чаще всего не хватает", _bars(_pct(learn, len(buckets['stretch']) or 1, 15)))}</div>
+<h2 id="stretch" class="stretch">{t("h.stretch_title")}</h2>
+<div class="grid">{_card(t("h.most_missing"), _bars(_pct(learn, len(buckets['stretch']) or 1, 15)))}</div>
 {_job_rows(buckets['stretch'][:limit_per_bucket], tracked, False)}
-<h2 id="reject" class="reject">Не подходят — отсеяны</h2>
-<div class="grid">{_card("Главные причины", _bars(_pct(reject_reasons, len(buckets['reject']) or 1, 10)))}</div>
-<details><summary>Показать отсеянные ({len(buckets['reject'])})</summary>
+<h2 id="reject" class="reject">{t("h.reject_title")}</h2>
+<div class="grid">{_card(t("h.main_reasons"), _bars(_pct(reject_reasons, len(buckets['reject']) or 1, 10)))}</div>
+<details><summary>{t("h.show_rejected", n=len(buckets['reject']))}</summary>
 {_job_rows(buckets['reject'][:limit_per_bucket], tracked, True)}</details>
-<h2 id="tracker">Мои заявки</h2>
-<div class="card tablewrap"><table><tr><th>Вакансия</th><th>Мой статус</th><th>Вакансия сейчас</th>
-<th>Обновлено</th><th>Заметка</th></tr>{app_rows}</table></div>
+<h2 id="tracker">{t("h.tracker")}</h2>
+<div class="card tablewrap"><table><tr><th>{t("col.job")}</th><th>{t("h.col_my_status")}</th><th>{t("h.col_job_now")}</th>
+<th>{t("h.col_updated")}</th><th>{t("h.col_note")}</th></tr>{app_rows}</table></div>
 {market_section(stats, sources)}
-<footer>{_attribution(sources)}Личный отчёт: хранится только в data/private/.</footer>"""
+<footer>{_attribution(sources)}{t("h.private_footer")}</footer>"""
     return _page("job-radar personal", body)

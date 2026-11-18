@@ -26,20 +26,12 @@ from ..config import load_yaml
 from ..match.profile import Profile, RemotePref
 from . import filters as F
 from .engine import live_jobs
+from ..i18n import get_lang, options, t
 
 Ask = Callable[[str, list[str], bool], str]   # (question, options, multi) -> raw answer
 
-LIKES = [("build_models", "обучать модели и разбираться, как они работают"),
-         ("products_llm", "делать продукты на ChatGPT-подобных моделях (чат-боты, ассистенты)"),
-         ("analyse", "анализировать данные и находить выводы"),
-         ("infra", "настраивать инфраструктуру, облако, автоматизировать выкладку"),
-         ("research", "исследовать новые методы, читать статьи"),
-         ("vision_hw", "камеры, роботы, автомобили, «железо»"),
-         ("consult", "общаться с клиентами и внедрять ИИ в компании"),
-         ("automation", "автоматизировать рутинные процессы")]
-BACKGROUNDS = [("developer", "разработчик"), ("analyst", "аналитик / работа с данными"),
-               ("student_it", "студент или выпускник ИТ/математики"), ("ml", "уже работаю с ML"),
-               ("other", "другая сфера, хочу перейти")]
+LIKES = ["build_models", "products_llm", "analyse", "infra", "research", "vision_hw", "consult", "automation"]
+BACKGROUNDS = ["developer", "analyst", "student_it", "ml", "other"]
 LEVELS = ["none", "A1", "A2", "B1", "B2", "C1", "C2"]
 
 
@@ -93,30 +85,26 @@ def _pick(raw: str, n: int) -> list[int]:
 
 def run_discovery(db: Database, ask: Ask) -> tuple[Profile, F.SearchFilters, str, list[RoleFacts]]:
     """Returns (profile, filters restricted to the chosen role, intro text, all role facts)."""
-    likes_idx = _pick(ask("1/10. Что из этого вам интереснее всего? (можно несколько)", [t for _, t in LIKES], True), len(LIKES))
-    likes = [LIKES[i][0] for i in likes_idx] or ["build_models"]
-    bg_idx = _pick(ask("2/10. Ваш опыт сейчас?", [t for _, t in BACKGROUNDS], False), len(BACKGROUNDS))
-    background = BACKGROUNDS[bg_idx[0]][0] if bg_idx else "other"
-    prog = _pick(ask("3/10. Программирование?", ["не программирую", "немного (курсы, скрипты)",
-                                                 "уверенно (Python или другой язык)"], False), 3)
+    likes_idx = _pick(ask(t("d.q1"), [t(f"d.like.{k}") for k in LIKES], True), len(LIKES))
+    likes = [LIKES[i] for i in likes_idx] or ["build_models"]
+    bg_idx = _pick(ask(t("d.q2"), [t(f"d.bg.{k}") for k in BACKGROUNDS], False), len(BACKGROUNDS))
+    background = BACKGROUNDS[bg_idx[0]] if bg_idx else "other"
+    prog = _pick(ask(t("d.q3"), options("d.prog"), False), 3)
     prog_lvl = prog[0] if prog else 0
-    math = _pick(ask("4/10. Математика и статистика?", ["сложно", "базовый уровень", "уверенно"], False), 3)
+    math = _pick(ask(t("d.q4"), options("d.math"), False), 3)
     math_lvl = math[0] if math else 1
-    de = _pick(ask("5/10. Немецкий?", LEVELS, False), len(LEVELS))
-    en = _pick(ask("6/10. Английский?", LEVELS, False), len(LEVELS))
-    cities = [c.strip() for c in re.split(r"[,;]", ask("7/10. В каких городах искать? (через запятую, пусто = вся Германия)", [], False)) if c.strip()]
+    de = _pick(ask(t("d.q5"), LEVELS, False), len(LEVELS))
+    en = _pick(ask(t("d.q6"), LEVELS, False), len(LEVELS))
+    cities = [c.strip() for c in re.split(r"[,;]", ask(t("d.q7"), [], False)) if c.strip()]
     radius = 0
     if cities:
-        r = re.findall(r"\d+", ask("   Радиус вокруг этих городов в км? (0 = только сами города)", [], False))
+        r = re.findall(r"\d+", ask(t("d.q7r"), [], False))
         radius = int(r[0]) if r else 0
-    wp = _pick(ask("8/10. Домашний офис?", ["только удалённо", "гибрид или удалённо", "всё равно, можно офис"], False), 3)
+    wp = _pick(ask(t("d.q8"), options("d.wp"), False), 3)
     workplace = [["remote"], ["remote", "hybrid"], []][wp[0] if wp else 2]
     sal = [int(x.replace(" ", "").replace(".", "")) for x in
-           re.findall(r"\d[\d .]*\d", ask("9/10. Диапазон зарплаты в год, € (например 50000-70000, пусто = не важно)", [], False))]
-    restr = _pick(ask("10/10. Ограничения (можно несколько, пусто = нет):",
-                      ["без кадровых агентств / Zeitarbeit", "только полная занятость", "только частичная занятость",
-                       "только бессрочный договор", "подходит без профильного опыта (Quereinstieg)",
-                       "без стажировок и мини-джобов"], True), 6)
+           re.findall(r"\d[\d .]*\d", ask(t("d.q9"), [], False))]
+    restr = _pick(ask(t("d.q10"), options("d.restr"), True), 6)
 
     german = LEVELS[de[0]] if de else "none"
     english = LEVELS[en[0]] if en else "B1"
@@ -141,23 +129,23 @@ def run_discovery(db: Database, ask: Ask) -> tuple[Profile, F.SearchFilters, str
             aff -= 2
         n = len([j for j in jobs if rid in role_of(j)])
         n_any, top, c1, entry, salary = market_facts(jobs_any_lang, rid)
-        facts.append(RoleFacts(rid, r["name"], r["what"], aff, n, top, c1, entry, salary, n_any))
+        what = r.get("what_ru", r["what"]) if get_lang() == "ru" else r["what"]
+        facts.append(RoleFacts(rid, r["name"], what, aff, n, top, c1, entry, salary, n_any))
     # Affinity first; market size breaks ties and sinks roles with no open jobs.
     facts.sort(key=lambda f: (-(f.affinity + (0.5 if f.jobs >= 20 else 0) - (3 if f.jobs == 0 else 0)), -f.jobs))
 
-    options = []
+    role_options = []
     for f in facts[:4]:
-        sal_txt = f"{f.salary_median[0]:,}–{f.salary_median[1]:,} €".replace(",", " ") if all(f.salary_median) else "зарплата редко указана"
-        options.append(f"{f.name}: {f.what} Сейчас {f.jobs} вакансий по вашим фильтрам (без учёта языка — {f.jobs_any_language}, "
-                       f"из них немецкий C1+ требуют {f.german_c1_share:.0%}); "
-                       f"для начинающих {f.entry_share:.0%}; {sal_txt}. Чаще всего просят: "
-                       + ", ".join(s for s, _ in f.top_skills[:6]))
-    choice = _pick(ask("Вам больше всего подходят эти направления. Какое посмотреть?", options, False), len(options))
+        sal_txt = f"{f.salary_median[0]:,}–{f.salary_median[1]:,} €".replace(",", " ") if all(f.salary_median) \
+            else t("d.salary_rare")
+        role_options.append(t("d.role_option", name=f.name, what=f.what, jobs=f.jobs, any_lang=f.jobs_any_language,
+                              c1=f"{f.german_c1_share:.0%}", entry=f"{f.entry_share:.0%}", salary=sal_txt,
+                              skills=", ".join(s for s, _ in f.top_skills[:6])))
+    choice = _pick(ask(t("d.pick_role"), role_options, False), len(role_options))
     chosen = facts[:4][choice[0] if choice else 0]
 
     top_names = [s for s, _ in chosen.top_skills]
-    have_idx = _pick(ask(f"Какие из самых востребованных навыков для «{chosen.name}» у вас уже есть? (номера, пусто = никаких)",
-                         top_names, True), len(top_names)) if top_names else []
+    have_idx = _pick(ask(t("d.have_skills", role=chosen.name), top_names, True), len(top_names)) if top_names else []
     skills = {top_names[i]: 2 for i in have_idx}
     seniority = "junior" if background in ("other", "student_it") or prog_lvl < 2 else "mid"
     profile = Profile(skills=skills, seniority=seniority, german_level=german, english_level=english, cities=cities,
@@ -167,7 +155,6 @@ def run_discovery(db: Database, ask: Ask) -> tuple[Profile, F.SearchFilters, str
                       summary=f"{chosen.name}. Interests: {', '.join(likes)}. Background: {background}.",
                       source="discover")
     learn = [s for s in top_names if s not in skills]
-    intro = (f"Направление: {chosen.name}. {chosen.what}\n"
-             f"Что выучить в первую очередь (по частоте в вакансиях): {', '.join(learn[:6]) or '—'}.")
+    intro = t("d.intro", role=chosen.name, what=chosen.what, learn=", ".join(learn[:6]) or "—")
     filters = filters.model_copy(update={"title_regex": roles()[chosen.role_id]["title"]})
     return profile, filters, intro, facts

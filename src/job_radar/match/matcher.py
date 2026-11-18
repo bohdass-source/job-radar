@@ -22,6 +22,7 @@ from ..extract.schema import LEVEL_ORDER
 from ..pipeline.dedup import city_key
 from ..search.embed import Embedder
 from .profile import Profile, RemotePref
+from ..i18n import t
 
 Bucket = Literal["apply", "stretch", "reject"]
 SENIORITY_ORDER = ["intern", "junior", "mid", "senior", "lead"]
@@ -60,15 +61,15 @@ def _language(name: str, required: str | None, have: str, job_lang: str | None, 
         return
     got = _lvl(have)
     if got is None:
-        res.notes.append(f"{name}: требуется {LEVEL_ORDER[need]}, ваш уровень не указан в профиле")
+        res.notes.append(t("m.lang_unknown", name=name, need=LEVEL_ORDER[need]))
         return
-    suffix = " (не указан явно, объявление на этом языке)" if inferred else ""
+    suffix = t("m.lang_inferred") if inferred else ""
     if got >= need:
         return
     if need - got >= 2 and not inferred:
-        res.blockers.append(f"{name}: требуется {LEVEL_ORDER[need]}, у вас {have}")
+        res.blockers.append(t("m.lang_block", name=name, need=LEVEL_ORDER[need], have=have))
     else:
-        res.gaps.append(f"{name}: нужно {LEVEL_ORDER[need]}{suffix}, у вас {have}")
+        res.gaps.append(t("m.lang_gap", name=name, need=LEVEL_ORDER[need], suffix=suffix, have=have))
 
 
 def evaluate(job: dict[str, Any], profile: Profile, similarity: float | None = None,
@@ -93,11 +94,11 @@ def evaluate(job: dict[str, Any], profile: Profile, similarity: float | None = N
 
     if not required:
         # No evidence either way: never "apply" blindly, ask for a manual look.
-        res.gaps.append("навыки в объявлении не распознаны — проверьте вручную")
+        res.gaps.append(t("m.skills_unrecognised"))
 
     # Languages
-    _language("Deutsch", ext.get("german_level"), profile.german_level, job.get("language"), res)
-    _language("Englisch", ext.get("english_level"), profile.english_level, job.get("language"), res)
+    _language(t("lang.de"), ext.get("german_level"), profile.german_level, job.get("language"), res)
+    _language(t("lang.en"), ext.get("english_level"), profile.english_level, job.get("language"), res)
 
     # Location / remote
     remote = ext.get("remote") or ("remote" if job.get("remote") else "unknown")
@@ -106,55 +107,55 @@ def evaluate(job: dict[str, Any], profile: Profile, similarity: float | None = N
     if remote != "remote":
         if profile.remote_pref == RemotePref.REMOTE_ONLY:
             if remote == "unknown":
-                res.gaps.append("формат работы не указан, вам нужен только remote — уточните")
+                res.gaps.append(t("m.remote_unknown"))
             else:
-                res.blockers.append(f"формат {remote}, вам нужен только remote")
+                res.blockers.append(t("m.remote_only", fmt=remote))
         elif profile.remote_pref == RemotePref.HYBRID_OR_REMOTE and remote == "onsite":
-            res.blockers.append("только офис, вам нужен hybrid/remote")
+            res.blockers.append(t("m.onsite_only"))
         if jcity and my_cities and jcity not in my_cities and not res.blockers:
             if profile.relocate:
-                res.notes.append(f"город {ext.get('city') or job.get('city')} — потребуется переезд")
+                res.notes.append(t("m.city_relocate", city=ext.get("city") or job.get("city")))
             elif remote != "unknown" or profile.remote_pref != RemotePref.ANY:
-                res.blockers.append(f"город {ext.get('city') or job.get('city')} не в вашем списке")
+                res.blockers.append(t("m.city_block", city=ext.get("city") or job.get("city")))
             else:
-                res.gaps.append(f"город {ext.get('city') or job.get('city')} не в вашем списке, формат не указан")
+                res.gaps.append(t("m.city_gap", city=ext.get("city") or job.get("city")))
 
     # Seniority and experience
     js, ms = ext.get("seniority"), str(profile.seniority)
     if js in SENIORITY_ORDER and ms in SENIORITY_ORDER:
         diff = SENIORITY_ORDER.index(js) - SENIORITY_ORDER.index(ms)
         if diff >= 2:
-            res.blockers.append(f"уровень {js}, ваш {ms}")
+            res.blockers.append(t("m.seniority_block", job=js, mine=ms))
         elif diff == 1:
-            res.gaps.append(f"уровень {js} на ступень выше вашего ({ms})")
+            res.gaps.append(t("m.seniority_gap", job=js, mine=ms))
         elif js == "intern" and SENIORITY_ORDER.index(ms) >= 2:
-            res.blockers.append("стажировка/Werkstudent ниже вашего уровня")
+            res.blockers.append(t("m.internship_below"))
     yrs = ext.get("years_experience_min")
     if yrs is not None:
         if yrs > profile.years_experience + 2:
-            res.blockers.append(f"нужно {yrs}+ лет опыта, у вас {profile.years_experience}")
+            res.blockers.append(t("m.years_block", yrs=yrs, have=profile.years_experience))
         elif yrs > profile.years_experience:
-            res.gaps.append(f"нужно {yrs}+ лет опыта, у вас {profile.years_experience}")
+            res.gaps.append(t("m.years_gap", yrs=yrs, have=profile.years_experience))
 
     # Salary
     sal = ext.get("salary") or {}
     if profile.min_salary_year and sal.get("max"):
         factor = {"year": 1, "month": 12, "hour": 1720}.get(sal.get("period", "year"), 1)
         if sal["max"] * factor < profile.min_salary_year:
-            res.blockers.append(f"зарплата до {int(sal['max'] * factor)} EUR/год ниже вашего минимума")
+            res.blockers.append(t("m.salary_below", amount=int(sal["max"] * factor)))
 
     # Company
     if any(c.lower() in (job.get("company") or "").lower() for c in profile.exclude_companies if c):
-        res.blockers.append("компания в вашем списке исключений")
+        res.blockers.append(t("m.company_excluded"))
 
     # Skills
     if required and coverage < REJECT_COVERAGE and not lenient_skills:
-        res.blockers.append(f"есть только {len(matched)} из {len(required)} обязательных навыков")
+        res.blockers.append(t("m.skills_few", m=len(matched), n=len(required)))
     elif required and coverage < APPLY_COVERAGE:  # also reached in lenient mode below REJECT_COVERAGE
-        res.gaps.append(f"покрыто {len(matched)} из {len(required)} обязательных навыков")
+        res.gaps.append(t("m.skills_covered", m=len(matched), n=len(required)))
 
     if job.get("status") == "unverified":
-        res.notes.append("не проверено автоматически (письмо/ручная страница) — откройте ссылку перед подачей")
+        res.notes.append(t("m.unverified"))
 
     sim = similarity if similarity is not None else 0.0
     w_sim = 0.25 if similarity is not None else 0.0

@@ -1,60 +1,69 @@
 # Role families for the guided discovery mode (job-radar find discover).
 # title: regex on the job title (case-insensitive) that assigns a job to the role.
 # likes / backgrounds: how strongly an answer points to this role (0..3).
-# what: one plain sentence a newcomer understands.
+# what / what_ru: one plain sentence a newcomer understands (English / Russian).
 
 roles:
   llm_engineer:
     name: "LLM / GenAI Engineer"
     title: "llm|genai|generative|gen ai|rag|prompt|agent|chatbot|sprachmodell"
-    what: "Строит продукты на больших языковых моделях: чат-боты, поиск по документам (RAG), агентов."
+    what: "Builds products on large language models: chatbots, document search (RAG), agents."
+    what_ru: "Строит продукты на больших языковых моделях: чат-боты, поиск по документам (RAG), агентов."
     likes: {products_llm: 3, build_models: 1, automation: 1}
     backgrounds: {developer: 3, student_it: 2, analyst: 1, ml: 2, other: 1}
   ml_engineer:
     name: "Machine Learning Engineer"
     title: "machine learning|ml[- ]?engineer|ml[- ]?entwickler|ki[- ]?(engineer|entwickler|ingenieur)|ai[- ]?(engineer|developer)|deep learning"
-    what: "Обучает модели и выводит их в рабочие системы: от данных до API в продакшене."
+    what: "Trains models and ships them into production systems, from data to an API."
+    what_ru: "Обучает модели и выводит их в рабочие системы: от данных до API в продакшене."
     likes: {build_models: 3, products_llm: 2, infra: 1}
     backgrounds: {developer: 3, ml: 3, student_it: 2, analyst: 1, other: 0}
   data_scientist:
     name: "Data Scientist"
     title: "data scien|datenwissenschaft|statistik|analytics|data analyst|datenanalyst"
-    what: "Ищет закономерности в данных, строит прогнозы и объясняет бизнесу, что из них следует."
+    what: "Finds patterns in data, builds forecasts and explains to the business what follows from them."
+    what_ru: "Ищет закономерности в данных, строит прогнозы и объясняет бизнесу, что из них следует."
     likes: {analyse: 3, build_models: 2, research: 1}
     backgrounds: {analyst: 3, ml: 2, student_it: 2, developer: 1, other: 2}
   mlops:
     name: "MLOps / ML Platform Engineer"
     title: "mlops|ml ops|platform|infrastructure|devops|sre|cloud"
-    what: "Отвечает за инфраструктуру: развёртывание моделей, мониторинг, CI/CD, облако."
+    what: "Owns the infrastructure: model deployment, monitoring, CI/CD, cloud."
+    what_ru: "Отвечает за инфраструктуру: развёртывание моделей, мониторинг, CI/CD, облако."
     likes: {infra: 3, automation: 2, build_models: 1}
     backgrounds: {developer: 3, ml: 2, student_it: 1, analyst: 0, other: 0}
   cv_robotics:
     name: "Computer Vision / Robotics"
     title: "computer vision|bildverarbeitung|vision|perception|robot|autonom|embedded|edge"
-    what: "Учит машины видеть: камеры, распознавание объектов, автопилоты, роботы, встроенные системы."
+    what: "Teaches machines to see: cameras, object detection, driver assistance, robots, embedded systems."
+    what_ru: "Учит машины видеть: камеры, распознавание объектов, автопилоты, роботы, встроенные системы."
     likes: {vision_hw: 3, build_models: 2, research: 1}
     backgrounds: {developer: 2, ml: 2, student_it: 2, other: 1, analyst: 0}
   nlp:
     name: "NLP Engineer"
     title: "nlp|natural language|sprachverarbeitung|computerlinguist|speech|text"
-    what: "Работает с текстом и речью: классификация, извлечение данных, перевод, распознавание речи."
+    what: "Works with text and speech: classification, information extraction, translation, speech recognition."
+    what_ru: "Работает с текстом и речью: классификация, извлечение данных, перевод, распознавание речи."
     likes: {products_llm: 2, build_models: 2, research: 2}
     backgrounds: {ml: 3, developer: 2, student_it: 2, other: 1, analyst: 1}
   research:
     name: "Research Scientist / Engineer"
     title: "research|forsch|scientist|phd|doktorand|wissenschaftlich"
-    what: "Исследует новые методы, пишет статьи, часто требует PhD или сильную математику."
+    what: "Researches new methods and writes papers; often needs a PhD or strong maths."
+    what_ru: "Исследует новые методы, пишет статьи, часто требует PhD или сильную математику."
     likes: {research: 3, build_models: 2}
     backgrounds: {ml: 3, student_it: 2, analyst: 1, developer: 1, other: 0}
   ai_consulting:
     name: "AI Consultant / Solutions"
     title: "consult|berater|beratung|solution|transformation|presales|product owner|projektleit"
-    what: "Помогает компаниям внедрять ИИ: разбирается в задаче клиента, выбирает решение, ведёт проект."
+    what: "Helps companies adopt AI: understands the client's problem, chooses a solution, runs the project."
+    what_ru: "Помогает компаниям внедрять ИИ: разбирается в задаче клиента, выбирает решение, ведёт проект."
     likes: {consult: 3, automation: 2, products_llm: 1, analyse: 1}
     backgrounds: {other: 3, analyst: 2, developer: 1, ml: 1, student_it: 1}
   automation:
     name: "AI Automation / Integration"
     title: "automation|automatisierung|integration|workflow|rpa|low[- ]?code|n8n"
-    what: "Встраивает ИИ в процессы компании: автоматизирует рутину, связывает системы, low-code."
+    what: "Builds AI into business processes: automates routine work, connects systems, low-code."
+    what_ru: "Встраивает ИИ в процессы компании: автоматизирует рутину, связывает системы, low-code."
     likes: {automation: 3, products_llm: 2, consult: 1}
     backgrounds: {other: 3, developer: 2, analyst: 2, student_it: 2, ml: 1}

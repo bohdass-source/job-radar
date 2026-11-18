@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import yaml
 
 from .config import CONFIG_DIR, REPORTS_DIR, private_path
+from .i18n import t
 
 
 def _db():
@@ -31,14 +32,14 @@ def cmd_sources(args: argparse.Namespace) -> None:
     overrides = full.get("terms_overrides") or {}
     print(f"{'source':17} {'enabled':8} {'terms':13} {'checked':11} {'verifies':8} rate limit")
     for name in ADAPTERS:
-        t = load_terms(name)
+        card = load_terms(name)
         if name in overrides:
-            t.status = f"{overrides[name]}*"
+            card.status = f"{overrides[name]}*"
         on = "yes" if (cfg.get(name) or {}).get("enabled") else "no"
-        stale = " (re-check!)" if t.stale else ""
-        print(f"{name:17} {on:8} {t.status:13} {t.checked!s:11} {'yes' if t.verifiable else 'no':8} {t.rate_limit}{stale}")
+        stale = " (re-check!)" if card.stale else ""
+        print(f"{name:17} {on:8} {card.status:13} {card.checked!s:11} {'yes' if card.verifiable else 'no':8} {card.rate_limit}{stale}")
         if args.verbose:
-            for u in t.terms_urls:
+            for u in card.terms_urls:
                 print(f"{'':17} terms: {u}")
     print("\nA source runs only when enabled in config/sources.yaml AND its card docs/sources/<name>.md says status: approved.")
     if overrides:
@@ -193,7 +194,7 @@ def cmd_match(args: argparse.Namespace) -> None:
     profile = _profile_or_exit(db)
     emb = get_embedder(args.model) if args.semantic else None
     results = match_all(db, profile, embedder=emb, include_tracked=args.all)
-    labels = {"apply": "ПОДХОДИТ", "stretch": "ДОРАБОТАТЬ", "reject": "НЕ ПОДХОДИТ"}
+    labels = {b: t(f"bucket.{b}") for b in ("apply", "stretch", "reject")}
     counts = {b: sum(r.bucket == b for _, r in results) for b in labels}
     print("  ".join(f"{labels[b]}: {n}" for b, n in counts.items()))
     for job, res in results:
@@ -201,17 +202,17 @@ def cmd_match(args: argparse.Namespace) -> None:
             continue
         if args.bucket == "all" and res.bucket == "reject":
             continue
-        flag = " [не проверено]" if job.get("status") == "unverified" else ""
+        flag = f" [{t('s.unverified')}]" if job.get("status") == "unverified" else ""
         print(f"\n[{labels[res.bucket]}] {res.score:.2f}  {job['job_id']}  {job['title']} — {job.get('company')}, "
               f"{job.get('city') or job.get('location') or ''}{flag}")
         if job.get("url"):
             print(f"   {job['url']}")
         if res.missing_required:
-            print(f"   не хватает: {', '.join(res.missing_required)}")
+            print("   " + t("s.missing", v=", ".join(res.missing_required)))
         for reason in res.blockers + res.gaps + res.notes:
             print(f"   - {reason}")
         if res.bucket == "stretch" and application_note(res):
-            print(f"   в письмо: {application_note(res)}")
+            print("   " + t("s.cover_note", v=application_note(res)))
         args.limit -= 1
         if args.limit <= 0:
             break
@@ -223,7 +224,7 @@ def cmd_track(args: argparse.Namespace) -> None:
     db = _db()
     if args.job_id == "list":
         for a in list_applications(db, args.status):
-            closed = "  (вакансия закрыта)" if a["job_status"] in ("closed", "expired") else ""
+            closed = t("c.job_closed") if a["job_status"] in ("closed", "expired") else ""
             print(f"{a['status']:10} {a['job_id']}  {a.get('title')} — {a.get('company')}{closed}")
         return
     if not args.status:
@@ -238,7 +239,7 @@ def cmd_ask(args: argparse.Namespace) -> None:
     ans = ask(_db(), args.question, k=args.k)
     print(ans.text)
     if ans.used_llm:
-        print("\nИсточники: " + ", ".join(sorted({h.job_id for h in ans.hits})))
+        print("\n" + t("c.sources") + ", ".join(sorted({h.job_id for h in ans.hits})))
 
 
 def cmd_report(args: argparse.Namespace) -> None:
@@ -328,7 +329,7 @@ def _numbered_ask(question: str, options: list[str], multi: bool) -> str:
     print(f"\n{question}")
     for i, opt in enumerate(options, 1):
         print(f"  {i}. {opt}")
-    hint = " (номера через запятую)" if multi else (" (номер)" if options else "")
+    hint = t("c.pick_many") if multi else (t("c.pick_one") if options else "")
     return input(f">{hint} ").strip()
 
 
@@ -347,19 +348,18 @@ def cmd_find(args: argparse.Namespace) -> None:
         if not args.inputs:
             sys.exit("give folders, files or github:<user>")
         profile, projects, evidence = profile_from_portfolio(args.inputs, LLMClient())
-        intro = (f"Портфолио: {len(projects)} проектов. Навыки с доказательствами: "
-                 + ", ".join(f"{s} ({n})" for s, n in evidence.most_common(15)))
+        intro = t("c.portfolio", n=len(projects), v=", ".join(f"{s} ({n})" for s, n in evidence.most_common(15)))
     elif args.mode == "questionnaire":
         from .find.questionnaire import process, template
 
         if args.template or not args.inputs:
             path = template(db, private_path("questionnaire.md"))
-            print(f"Анкета: {path}\nЗаполните её и запустите: job-radar find questionnaire {path}")
+            print(t("c.q_written", path=path))
             return
         profile, base, result, method = process(Path(args.inputs[0]).read_text(encoding="utf-8"), LLMClient())
-        intro = (f"Анкета обработана ({'ИИ' if method == 'llm' else 'правилами, LLM недоступна'}): "
-                 f"{len(profile.skills)} навыков, немецкий {profile.german_level}, английский {profile.english_level}."
-                 + (f" Другие ограничения: {'; '.join(result.other_restrictions)}" if result.other_restrictions else ""))
+        intro = (t("c.q_done", how=t("c.q_how_llm") if method == "llm" else t("c.q_how_rules"), n=len(profile.skills),
+                   de=profile.german_level, en=profile.english_level)
+                 + (t("c.q_other", v="; ".join(result.other_restrictions)) if result.other_restrictions else ""))
     elif args.mode == "keywords":
         from .find.filters import SearchFilters
         from .find.keywords import parse_query
@@ -368,7 +368,7 @@ def cmd_find(args: argparse.Namespace) -> None:
             sys.exit('give keywords, e.g.: job-radar find keywords "LLM RAG Berlin +python -praktikum"')
         query, base = parse_query(" ".join(args.inputs), _filters_from_args(args, SearchFilters()))
         profile = load_profile(db) if args.use_profile else None
-        intro = f"Поиск: «{query}»."
+        intro = t("c.query", q=query)
     elif args.mode == "discover":
         from .find.discover import run_discovery
 
@@ -381,7 +381,7 @@ def cmd_find(args: argparse.Namespace) -> None:
         if args.city and not profile.cities:
             profile = profile.model_copy(update={"cities": args.city})
         if profile.german_level == "unknown":
-            print("Подсказка: укажите --german <уровень>, иначе требования к немецкому не проверяются.")
+            print(t("c.hint_german"))
     filters = _filters_from_args(args, base)
     results = engine.run(db, args.mode, filters, profile=profile, query=query, top=args.top, intro=intro,
                          lenient_skills=args.mode == "discover")
@@ -390,7 +390,7 @@ def cmd_find(args: argparse.Namespace) -> None:
     print(f"\nHTML: {path}")
     if profile is not None and args.save_profile:
         save_profile(db, profile)
-        print("профиль сохранён (используется в match, report, digest)")
+        print(t("c.profile_saved"))
 
 
 # ---------- bench ----------
@@ -479,6 +479,7 @@ def cmd_schedule(args: argparse.Namespace) -> None:
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="job-radar", description="AI/ML job market radar for Germany")
     p.add_argument("-v", "--verbose", action="store_true")
+    p.add_argument("--lang", choices=["en", "ru"], help="output language (default: JOB_RADAR_LANG or en)")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("sources", help="list sources, terms status, rate limits")
@@ -603,6 +604,9 @@ def main(argv: list[str] | None = None) -> None:
 
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING, format="%(levelname)s %(message)s")
+    from .i18n import set_lang
+
+    set_lang(args.lang)
     from .sources.base import SourceNotApproved
 
     try:

@@ -17,6 +17,7 @@ from pymongo.database import Database
 from ..config import load_yaml
 from ..skills import all_skills, canonical, category_of
 from .profile import Profile, merge_into
+from ..i18n import question_text, t
 
 Ask = Callable[[dict[str, Any], list[str]], str]
 
@@ -94,7 +95,7 @@ def run_interview(db: Database, ask: Ask, base: Profile | None = None, only_miss
             for skill in selected:
                 if skill in profile.skills and only_missing:
                     continue
-                raw = ask({**q, "text": q["text"].format(skill=skill)}, ["1", "2", "3"])
+                raw = ask({**q, "text": question_text(q).format(skill=skill)}, ["1", "2", "3"])
                 level = int(raw) if raw.strip() in ("1", "2", "3") else 2
                 updates["skills"][skill] = level
             continue
@@ -105,12 +106,12 @@ def run_interview(db: Database, ask: Ask, base: Profile | None = None, only_miss
             if not gaps:
                 continue
             total = max(1, db.jobs.count_documents({"status": {"$in": ["open", "unverified"]}, "extraction": {"$ne": None}}))
-            labels = [f"{s} — {round(100 * demand[s] / total)}% вакансий" for s in gaps]
+            labels = [t("i.pct_jobs", skill=s, pct=round(100 * demand[s] / total)) for s in gaps]
             raw = ask(q, labels)
             for label in _pick(raw, labels):
                 skill = label.split(" — ")[0]
                 lvl = ask({"qid": f"level_{skill}", "type": "single",
-                           "text": f"{skill}: 1 — основы, 2 — проекты, 3 — продакшен"}, ["1", "2", "3"])
+                           "text": t("i.level", skill=skill)}, ["1", "2", "3"])
                 updates["skills"][skill] = int(lvl) if lvl.strip() in ("1", "2", "3") else 1
             continue
 
@@ -143,10 +144,10 @@ def run_interview(db: Database, ask: Ask, base: Profile | None = None, only_miss
 
 
 def terminal_ask(q: dict[str, Any], options: list[str]) -> str:
-    print(f"\n{q['text']}")
+    print(f"\n{question_text(q)}")
     for i, opt in enumerate(options, 1):
         print(f"  {i}. {opt}")
-    hint = " (номера или названия через запятую)" if q.get("type") in ("multi", "skills", "market_gaps") else ""
+    hint = t("i.hint_many") if q.get("type") in ("multi", "skills", "market_gaps") else ""
     return input(f"> {hint} ").strip() if hint else input("> ").strip()
 
 
@@ -155,8 +156,8 @@ def cv_draft_markdown(profile: Profile) -> str:
     for skill, level in sorted(profile.skills.items(), key=lambda kv: -kv[1]):
         by_cat.setdefault(category_of(skill), []).append(skill + (" ★" if level == 3 else ""))
     lines = ["# Lebenslauf / CV — Entwurf", "",
-             "_Черновик собран job-radar из ваших ответов. Хранится только в data/private/._", "",
-             "## Profil", profile.summary or "_(опишите 2-3 предложения о себе)_", "",
+             t("i.cv_note"), "",
+             "## Profil", profile.summary or t("i.cv_profile_todo"), "",
              f"**Zielrollen:** {', '.join(profile.target_roles) or '—'}  ",
              f"**Erfahrung:** {profile.years_experience} Jahre, Level {profile.seniority}  ",
              f"**Sprachen:** Deutsch {profile.german_level}, Englisch {profile.english_level}", "",
@@ -165,5 +166,5 @@ def cv_draft_markdown(profile: Profile) -> str:
         lines.append(f"- **{cat}:** {', '.join(skills)}")
     if profile.learning:
         lines += ["", f"**Aktuell in Weiterbildung:** {', '.join(profile.learning)}"]
-    lines += ["", "## Berufserfahrung / Projekte", "_(заполните: компания, период, задачи, результаты)_"]
+    lines += ["", "## Berufserfahrung / Projekte", t("i.cv_exp_todo")]
     return "\n".join(lines) + "\n"

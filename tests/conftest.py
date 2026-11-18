@@ -27,3 +27,13 @@ def terms():
 
 
 FRESHNESS = {"missed_runs_to_close": 2, "unverified_ttl_days": 21, "max_age_days": 90}
+
+
+@pytest.fixture(autouse=True)
+def _russian_by_default():
+    """Most assertions were written against the Russian wording; English has its own tests."""
+    from job_radar.i18n import set_lang
+
+    set_lang("ru")
+    yield
+    set_lang(None)

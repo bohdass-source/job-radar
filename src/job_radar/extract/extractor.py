@@ -62,6 +62,9 @@ def extract_one(job: dict[str, Any], llm: LLMClient | None, method: Method = "au
         except (LLMUnavailable, LLMInvalidOutput) as exc:
             if method == "llm":
                 raise
+            if isinstance(exc, LLMUnavailable):
+                # The gateway is down: stop paying retries + timeouts on every remaining job of this run.
+                llm.base_url = ""
             log.warning("LLM extraction failed for %s (%s); using rules", job.get("job_id"), exc)
     ext = extract_rules(job.get("title", ""), job.get("description", ""), job.get("city"))
     return to_document(ext), "rules"

@@ -22,6 +22,7 @@ from ..extract.schema import LEVEL_ORDER
 from ..models import utcnow
 from ..pipeline.dedup import city_key, display_city
 from ..pipeline.freshness import _aware
+from ..i18n import t
 
 Workplace = Literal["remote", "hybrid", "onsite"]
 SortKey = Literal["fit", "date", "salary", "language", "distance"]
@@ -54,24 +55,25 @@ class SearchFilters(BaseModel):
     def describe(self) -> str:
         parts = []
         if self.cities:
-            parts.append(", ".join(self.cities) + (f" + {self.radius_km} км" if self.radius_km else ""))
+            parts.append(", ".join(self.cities) + (" + " + t("f.km", km=self.radius_km) if self.radius_km else ""))
         if self.workplace:
-            parts.append("формат: " + "/".join(self.workplace))
+            parts.append(t("f.workplace", v="/".join(self.workplace)))
         if self.salary_min or self.salary_max:
-            parts.append(f"зарплата {self.salary_min or '…'}–{self.salary_max or '…'} €")
+            parts.append(t("f.salary", lo=self.salary_min or "…", hi=self.salary_max or "…"))
         if self.german_max:
-            parts.append(f"немецкий до {self.german_max}")
+            parts.append(t("f.german", v=self.german_max))
         if self.english_max:
-            parts.append(f"английский до {self.english_max}")
+            parts.append(t("f.english", v=self.english_max))
         if self.seniority:
-            parts.append("уровень: " + "/".join(self.seniority))
-        flags = [n for n, on in [("без агентств", self.no_agency), ("бессрочно", self.permanent_only),
-                                 ("Quereinstieg", self.career_changer_ok), ("без стажировок", self.exclude_internships)] if on]
+            parts.append(t("f.seniority", v="/".join(self.seniority)))
+        flags = [t(n) for n, on in [("f.no_agency", self.no_agency), ("f.permanent", self.permanent_only),
+                                    ("f.career_changer", self.career_changer_ok),
+                                    ("f.no_internships", self.exclude_internships)] if on]
         if self.fulltime is not None:
-            flags.append("полная занятость" if self.fulltime else "частичная занятость")
+            flags.append(t("f.fulltime") if self.fulltime else t("f.parttime"))
         if self.posted_within_days:
-            flags.append(f"за {self.posted_within_days} дн.")
-        return "; ".join(parts + flags) or "без фильтров"
+            flags.append(t("f.days", n=self.posted_within_days))
+        return "; ".join(parts + flags) or t("f.none")
 
 
 @lru_cache
@@ -165,53 +167,53 @@ def check(job: dict[str, Any], f: SearchFilters) -> list[str]:
             d = distance_km(job, f)
             if f.radius_km and d is not None:
                 if d > f.radius_km:
-                    reasons.append("город/радиус")
+                    reasons.append(t("r.city"))
             elif jcity or d is not None:
-                reasons.append("город/радиус")
+                reasons.append(t("r.city"))
     if f.workplace and wp != "unknown" and wp not in f.workplace:
-        reasons.append("формат работы")
+        reasons.append(t("r.workplace"))
     lo, hi = yearly_salary(job)
     if f.only_with_salary and lo is None and hi is None:
-        reasons.append("зарплата не указана")
+        reasons.append(t("r.no_salary"))
     if f.salary_min and (hi or lo) and (hi or lo) < f.salary_min:
-        reasons.append("зарплата ниже диапазона")
+        reasons.append(t("r.salary_low"))
     if f.salary_max and lo and lo > f.salary_max:
-        reasons.append("зарплата выше диапазона")
-    for field, mine, label in (("german_level", f.german_max, "немецкий"), ("english_level", f.english_max, "английский")):
+        reasons.append(t("r.salary_high"))
+    for field, mine, label in (("german_level", f.german_max, "r.german"), ("english_level", f.english_max, "r.english")):
         need, have = _level(ext.get(field)), _level(mine)
         if need is not None and have is not None and need > have:
-            reasons.append(f"{label} выше вашего уровня")
+            reasons.append(t(label))
     if f.seniority and ext.get("seniority") in SENIORITY and ext["seniority"] not in f.seniority:
-        reasons.append("уровень позиции")
+        reasons.append(t("r.seniority"))
     if f.exclude_internships and (ext.get("seniority") == "intern" or attrs.get("minor_job")):
-        reasons.append("стажировка/мини-джоб")
+        reasons.append(t("r.internship"))
     if f.no_agency and is_agency(job):
-        reasons.append("кадровое агентство")
+        reasons.append(t("r.agency"))
     if f.fulltime is True and attrs.get("fulltime") is False:
-        reasons.append("не полная занятость")
+        reasons.append(t("r.not_fulltime"))
     if f.fulltime is False and attrs.get("parttime") is False and attrs.get("fulltime") is True:
-        reasons.append("нет частичной занятости")
+        reasons.append(t("r.no_parttime"))
     if f.permanent_only and attrs.get("contract") == "BEFRISTET":
-        reasons.append("срочный договор")
+        reasons.append(t("r.fixed_term"))
     if f.career_changer_ok and attrs.get("career_changer_ok") is False:
-        reasons.append("не для Quereinstieg")
+        reasons.append(t("r.not_career_changer"))
     if f.posted_within_days:
         posted = _aware(job.get("posted_at")) or _aware(job.get("first_seen"))
         if posted and utcnow() - posted > timedelta(days=f.posted_within_days):
-            reasons.append("опубликована давно")
+            reasons.append(t("r.old"))
     if f.title_regex and not re.search(f.title_regex, job.get("title", ""), re.I):
-        reasons.append("другая роль")
+        reasons.append(t("r.other_role"))
     company = (job.get("company") or "").lower()
     if any(c.lower() in company for c in f.exclude_companies if c):
-        reasons.append("компания исключена")
+        reasons.append(t("r.company"))
     if f.keywords_all or f.keywords_any or f.keywords_none:
         text = f"{job.get('title', '')}\n{job.get('company', '')}\n{job.get('description', '')}".lower()
         if f.keywords_all and not all(_contains(text, k) for k in f.keywords_all):
-            reasons.append("нет всех ключевых слов")
+            reasons.append(t("r.kw_all"))
         if f.keywords_any and not any(_contains(text, k) for k in f.keywords_any):
-            reasons.append("нет ключевых слов")
+            reasons.append(t("r.kw_any"))
         if f.keywords_none and any(_contains(text, k) for k in f.keywords_none):
-            reasons.append("исключённое слово")
+            reasons.append(t("r.kw_none"))
     return reasons
 
 

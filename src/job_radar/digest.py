@@ -15,6 +15,7 @@ from .match.profile import Profile
 from .models import utcnow
 from .pipeline.freshness import _aware
 from .report.html import safe_url
+from .i18n import t
 
 
 def build_digest(db: Database, profile: Profile, days: int = 7) -> tuple[str, str, int]:
@@ -32,18 +33,18 @@ def build_digest(db: Database, profile: Profile, days: int = 7) -> tuple[str, st
         for job, res in items[:25]:
             extra = ""
             if res.bucket == "stretch":
-                extra = f"<br><small>Не хватает: {escape(', '.join(res.missing_required) or ', '.join(res.gaps))}. " \
+                extra = f"<br><small>{escape(t('g.missing', v=', '.join(res.missing_required) or ', '.join(res.gaps)))} " \
                         f"{escape(application_note(res))}</small>"
-            unverified = " <small>(не проверено)</small>" if job.get("status") == "unverified" else ""
+            unverified = f" <small>({t('s.unverified')})</small>" if job.get("status") == "unverified" else ""
             li.append(f"<li><a href='{safe_url(job.get('url'))}'>{escape(job.get('title', ''))}</a> — "
                       f"{escape(job.get('company', ''))}, {escape(job.get('city') or '')}{unverified}{extra}</li>")
         return f"<h3>{title} ({len(items)})</h3><ul>{''.join(li)}</ul>"
 
-    html = (f"<p>Новые актуальные вакансии с {since:%d.%m.%Y}.</p>"
-            + block("Подходят — можно подаваться", apply)
-            + block("Доработать", stretch)
-            + "<p><small>Закрытые вакансии исключены. job-radar</small></p>")
-    subject = f"job-radar: {len(apply)} подходят, {len(stretch)} доработать"
+    html = (f"<p>{t('g.intro', date=f'{since:%d.%m.%Y}')}</p>"
+            + block(t("g.apply"), apply)
+            + block(t("g.stretch"), stretch)
+            + f"<p><small>{t('g.footer')}</small></p>")
+    subject = t("g.subject", a=len(apply), s=len(stretch))
     return subject, html, len(fresh)
 
 

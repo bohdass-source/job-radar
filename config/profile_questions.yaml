@@ -2,6 +2,7 @@
 # `job-radar profile seed-questions` (also done automatically on first interview),
 # so questions can be edited in the DB or here and re-seeded.
 #
+# text / text_en: Russian / English wording (picked by JOB_RADAR_LANG).
 # type:   single | multi | bool | number | text | skills | skill_level | market_gaps
 # sets:   which profile field the answer fills
 # ask_if: condition on earlier answers, e.g. "remote_pref != remote_only"
@@ -15,6 +16,7 @@ questions:
     order: 10
     type: multi
     text: "Какие роли вам интересны?"
+    text_en: "Which roles interest you?"
     options: [ML Engineer, AI Engineer, Data Scientist, MLOps Engineer, LLM/GenAI Engineer, Computer Vision Engineer, NLP Engineer, Research Engineer]
     sets: target_roles
 
@@ -22,6 +24,7 @@ questions:
     order: 20
     type: single
     text: "Как бы вы оценили свой уровень?"
+    text_en: "How would you rate your level?"
     options: [intern, junior, mid, senior, lead]
     sets: seniority
 
@@ -29,6 +32,7 @@ questions:
     order: 30
     type: number
     text: "Сколько лет профессионального опыта в разработке / ML (целое число)?"
+    text_en: "Years of professional experience in software / ML (whole number)?"
     sets: years_experience
 
   - qid: skills_language
@@ -36,6 +40,7 @@ questions:
     type: skills
     category: language
     text: "Языки программирования, с которыми вы работали:"
+    text_en: "Programming languages you have worked with:"
     sets: skills
 
   - qid: skills_ml_framework
@@ -43,6 +48,7 @@ questions:
     type: skills
     category: ml_framework
     text: "ML-фреймворки и библиотеки:"
+    text_en: "ML frameworks and libraries:"
     sets: skills
 
   - qid: skills_genai
@@ -50,6 +56,7 @@ questions:
     type: skills
     category: genai
     text: "LLM / GenAI:"
+    text_en: "LLM / GenAI:"
     sets: skills
 
   - qid: skills_ml_domain
@@ -57,6 +64,7 @@ questions:
     type: skills
     category: ml_domain
     text: "Области ML:"
+    text_en: "ML areas:"
     sets: skills
 
   - qid: skills_mlops
@@ -64,6 +72,7 @@ questions:
     type: skills
     category: mlops
     text: "MLOps, инфраструктура, бэкенд:"
+    text_en: "MLOps, infrastructure, backend:"
     sets: skills
 
   - qid: skills_cloud_data
@@ -71,6 +80,7 @@ questions:
     type: skills
     category: [cloud, data, hardware]
     text: "Облака и данные:"
+    text_en: "Cloud and data:"
     sets: skills
 
   - qid: skill_levels
@@ -78,6 +88,7 @@ questions:
     type: skill_level
     for_each: selected_skills
     text: "{skill}: 1 — основы/курсы, 2 — использовал(а) в проектах, 3 — в продакшене или 3+ года"
+    text_en: "{skill}: 1 — basics/courses, 2 — used in projects, 3 — production or 3+ years"
     sets: skills
 
   - qid: market_gaps
@@ -85,18 +96,21 @@ questions:
     type: market_gaps
     top_n: 12
     text: "Рынок часто просит навыки, которые вы не отметили. Отметьте те, что знаете:"
+    text_en: "The market often asks for skills you have not ticked. Tick the ones you know:"
     sets: skills
 
   - qid: learning
     order: 120
     type: text
     text: "Что вы изучаете прямо сейчас (через запятую)? Это пометит вакансии 'доработать', а не 'не подходит'."
+    text_en: "What are you learning right now (comma-separated)? Those jobs become 'stretch' instead of 'no fit'."
     sets: learning
 
   - qid: german_level
     order: 130
     type: single
     text: "Уровень немецкого:"
+    text_en: "German level:"
     options: [none, A1, A2, B1, B2, C1, C2]
     sets: german_level
 
@@ -104,6 +118,7 @@ questions:
     order: 140
     type: single
     text: "Уровень английского:"
+    text_en: "English level:"
     options: [none, A1, A2, B1, B2, C1, C2]
     sets: english_level
 
@@ -111,6 +126,7 @@ questions:
     order: 150
     type: single
     text: "Формат работы:"
+    text_en: "Workplace:"
     options: [any, hybrid_or_remote, remote_only]
     sets: remote_pref
 
@@ -118,6 +134,7 @@ questions:
     order: 160
     type: text
     text: "В каких городах вы готовы работать в офисе/гибридно (через запятую)?"
+    text_en: "In which cities would you work on-site or hybrid (comma-separated)?"
     ask_if: "remote_pref != remote_only"
     sets: cities
 
@@ -125,6 +142,7 @@ questions:
     order: 170
     type: bool
     text: "Готовы переехать в другой город Германии ради подходящей работы?"
+    text_en: "Would you move to another German city for the right job?"
     ask_if: "remote_pref != remote_only"
     sets: relocate
 
@@ -132,16 +150,19 @@ questions:
     order: 180
     type: number
     text: "Минимальная годовая зарплата брутто в EUR (0 — не важно):"
+    text_en: "Minimum yearly gross salary in EUR (0 = does not matter):"
     sets: min_salary_year
 
   - qid: exclude_companies
     order: 190
     type: text
     text: "Компании, которые не предлагать (через запятую, можно пусто):"
+    text_en: "Companies not to suggest (comma-separated, may be empty):"
     sets: exclude_companies
 
   - qid: experience_story
     order: 200
     type: text
     text: "Опишите 1-2 проекта: задача, что сделали вы, стек, результат в цифрах. Это пойдёт в черновик резюме."
+    text_en: "Describe 1-2 projects: the task, what you did, the stack, the result in numbers. This goes into the CV draft."
     sets: summary
