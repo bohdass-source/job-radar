@@ -35,7 +35,14 @@ def build(name: str, *, cfg: dict[str, Any] | None = None, http: PoliteClient | 
           terms: TermsCard | None = None, enforce_terms: bool = True) -> SourceAdapter:
     if name not in ADAPTERS:
         raise KeyError(f"unknown source {name!r}; known: {', '.join(ADAPTERS)}")
-    terms = terms or load_terms(name)
+    if terms is None:
+        terms = load_terms(name)
+        # A local decision (config/sources.local.yaml, git-ignored) may approve a source
+        # whose public card is not approved. It is logged so it is never silent.
+        override = (source_config().get("terms_overrides") or {}).get(name)
+        if override:
+            log.warning("%s: terms status overridden locally to %r (config/sources.local.yaml)", name, override)
+            terms.status = override
     if enforce_terms and terms.status != "approved":
         raise SourceNotApproved(
             f"{name}: terms card status is {terms.status!r} (docs/sources/{name}.md). "

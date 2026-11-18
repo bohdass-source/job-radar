@@ -3,10 +3,14 @@
 # docs/sources/<name>.md has `status: approved`.
 
 sources:
-  ba_jobsuche:        # approved by the user 2026-11-16 despite BA Nutzungsbedingungen §2a(3); see card
-    enabled: true
+  # Off by default: read docs/sources/ba_jobsuche.md first. To enable it on your
+  # machine, put this in config/sources.local.yaml (git-ignored):
+  #   sources: {ba_jobsuche: {enabled: true}}
+  #   terms_overrides: {ba_jobsuche: approved}
+  ba_jobsuche:
+    enabled: false
     max_days_old: 60
-    max_pages: 40
+    max_pages: 100
     queries:
       - Machine Learning
       - Künstliche Intelligenz
@@ -20,6 +24,15 @@ sources:
       - NLP
       - LLM
       - MLOps
+      - Generative AI
+      - Prompt Engineer
+      - Bildverarbeitung
+      - Neuronale Netze
+      - Reinforcement Learning
+      - Data Engineer KI
+      - Python KI
+      - Applied Scientist
+      - Sprachmodelle
 
   adzuna:
     enabled: true
@@ -38,8 +51,7 @@ sources:
       - computer vision engineer
       - deep learning
       - applied scientist
-      - genai
-
+  
   arbeitnow:
     enabled: true
     max_pages: 10
@@ -76,10 +88,6 @@ relevance:
     - machine learning
     - ml
     - mlops
-    - ai
-    - ki
-    - künstliche intelligenz
-    - artificial intelligence
     - data scientist
     - data science
     - deep learning
@@ -88,11 +96,20 @@ relevance:
     - computer vision
     - llm
     - genai
-    - generative
     - applied scientist
     - research scientist
     - research engineer
     - ml-engineer
+  # Generic AI words. A title with only these (no keyword above) counts only if it
+  # also names an engineering/science role, or the ad text mentions ML technology.
+  # Keeps "KI-Engineer" and drops "Rechtsanwalt KI- und Datenrecht".
+  title_weak_keywords:
+    - ai
+    - ki
+    - künstliche intelligenz
+    - artificial intelligence
+    - genai
+    - generative
   title_exclude:
     - sales
     - vertrieb

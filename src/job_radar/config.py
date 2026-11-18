@@ -81,10 +81,26 @@ def settings() -> Settings:
     )
 
 
+def _deep_merge(base: Any, override: Any) -> Any:
+    if isinstance(base, dict) and isinstance(override, dict):
+        out = dict(base)
+        for key, value in override.items():
+            out[key] = _deep_merge(base.get(key), value)
+        return out
+    return override
+
+
 def load_yaml(name: str) -> Any:
+    """Load config/<name>; if config/<stem>.local.yaml exists (git-ignored), deep-merge it on top.
+    The local file holds machine-specific decisions such as enabling a source."""
     path = CONFIG_DIR / name
     with path.open(encoding="utf-8") as fh:
-        return yaml.safe_load(fh) or {}
+        data = yaml.safe_load(fh) or {}
+    local = path.with_name(f"{path.stem}.local{path.suffix}")
+    if local.exists():
+        with local.open(encoding="utf-8") as fh:
+            data = _deep_merge(data, yaml.safe_load(fh) or {})
+    return data
 
 
 def private_path(*parts: str) -> Path:

@@ -83,9 +83,10 @@ def collect(db: Database, sources: Iterable[str] | None = None, *, dry_run: bool
 def prune(db: Database, *, dry_run: bool = False) -> dict[str, int]:
     """Re-apply the relevance and Germany rules to stored jobs (after the rules
     changed) and delete the ones that no longer pass. Jobs you track are kept."""
-    from .relevance import _geo, _rules
+    from .relevance import _geo, _rules, _weak
 
     _rules.cache_clear()
+    _weak.cache_clear()
     _geo.cache_clear()
     tracked = {a["job_id"] for a in db.applications.find({}, {"job_id": 1})}
     counts = {"kept": 0, "not_relevant": 0, "not_germany": 0}

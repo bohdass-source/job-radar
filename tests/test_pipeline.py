@@ -249,3 +249,24 @@ def test_rerun_without_text_keeps_stored_description(db):
            freshness_cfg=FRESHNESS)
     post = db.postings.find_one({"source_id": "r1"})
     assert post["description"] == "Full text with PyTorch" and post["description_is_snippet"] is False
+
+
+def test_generic_ai_titles_need_a_technical_role():
+    assert is_relevant_title("KI-Engineer (m/w/d) - Hybrid") and is_relevant_title("Werkstudent KI-Entwicklung")
+    assert not is_relevant_title("Rechtsanwalt KI- und Datenrecht (m/w/d)")
+    assert not is_relevant_title("Manager KI-gestützte Prozessoptimierung")
+    assert not is_relevant("AI Associate", "Sales role") and is_relevant("AI Associate", "We build RAG systems")
+
+
+def test_local_config_deep_merge():
+    from job_radar.config import _deep_merge
+
+    base = {"sources": {"ba_jobsuche": {"enabled": False, "queries": ["ML"]}, "arbeitnow": {"enabled": True}}}
+    out = _deep_merge(base, {"sources": {"ba_jobsuche": {"enabled": True}}, "terms_overrides": {"ba_jobsuche": "approved"}})
+    assert out["sources"]["ba_jobsuche"] == {"enabled": True, "queries": ["ML"]}
+    assert out["sources"]["arbeitnow"]["enabled"] and out["terms_overrides"]["ba_jobsuche"] == "approved"
+
+
+def test_consultant_must_be_a_whole_word():
+    assert not is_relevant_title("Steuerberater:in KI affin & remote")
+    assert is_relevant_title("KI-Berater (m/w/d)") and is_relevant_title("AI Consultant")

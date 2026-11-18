@@ -26,10 +26,14 @@ def cmd_sources(args: argparse.Namespace) -> None:
     from .sources.base import load_terms
     from .sources.registry import ADAPTERS, source_config
 
-    cfg = source_config().get("sources") or {}
+    full = source_config()
+    cfg = full.get("sources") or {}
+    overrides = full.get("terms_overrides") or {}
     print(f"{'source':17} {'enabled':8} {'terms':13} {'checked':11} {'verifies':8} rate limit")
     for name in ADAPTERS:
         t = load_terms(name)
+        if name in overrides:
+            t.status = f"{overrides[name]}*"
         on = "yes" if (cfg.get(name) or {}).get("enabled") else "no"
         stale = " (re-check!)" if t.stale else ""
         print(f"{name:17} {on:8} {t.status:13} {t.checked!s:11} {'yes' if t.verifiable else 'no':8} {t.rate_limit}{stale}")
@@ -37,6 +41,8 @@ def cmd_sources(args: argparse.Namespace) -> None:
             for u in t.terms_urls:
                 print(f"{'':17} terms: {u}")
     print("\nA source runs only when enabled in config/sources.yaml AND its card docs/sources/<name>.md says status: approved.")
+    if overrides:
+        print("* status overridden locally in config/sources.local.yaml")
 
 
 def cmd_companies(args: argparse.Namespace) -> None:

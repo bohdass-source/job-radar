@@ -5,7 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "job-radar"
 version = "0.1.0"
-description = "Collects AI/ML job ads in Germany from sources whose terms allow it, extracts structured data, and matches them against your profile."
+description = "AI/ML job market radar for Germany: multi-source collection, cross-source dedup, freshness checks, LLM extraction, semantic search and profile matching."
+readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.12"
 dependencies = [
   "httpx>=0.27",

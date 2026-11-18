@@ -33,7 +33,7 @@ nav{display:flex;gap:14px;flex-wrap:wrap;margin:16px 0;font-size:14px}nav a{colo
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.kpi b{display:block;font-size:24px}.row{display:grid;grid-template-columns:minmax(90px,38%) 1fr 64px;gap:8px;
+.kpi b{display:block;font-size:24px}.row{display:grid;grid-template-columns:minmax(90px,36%) 1fr 92px;gap:8px;
 align-items:center;font-size:13.5px;margin:3px 0}.track{background:var(--bar2);border-radius:4px;height:10px}
 .fill{background:var(--bar);border-radius:4px;height:10px}.num{text-align:right;font-variant-numeric:tabular-nums}
 table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid
